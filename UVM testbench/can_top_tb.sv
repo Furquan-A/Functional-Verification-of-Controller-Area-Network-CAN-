@@ -21,6 +21,18 @@ can_if vif(clk_i
 `endif 
 );
 
+//----------RESET --------------------
+ initial begin
+`ifdef CAN_WISHBONE_IF
+    vif.wb_rst_i = 1'b1;
+    repeat (10) @(posedge wb_clk_i);
+    vif.wb_rst_i = 1'b0;
+`else
+    vif.rst_i = 1'b1;
+    repeat (10) @(posedge clk_i);
+    vif.rst_i = 1'b0;
+`endif
+  end
 
 //--------------DUT Instantiation-------
 can_top dut(
@@ -47,13 +59,12 @@ can_top dut(
 .tx_o(vif.tx_o),
 .bus_off_on(vif.bus_off_on),
 .irq_on(vif.irq_on),
-.clkout_o(vif.clkout_o);
-)
+.clkout_o(vif.clkout_o)
+);
 
 // ---------- Set Interface in the config data_base------
 initial begin 
 uvm_config_db #(virtual can_if) :: set(null,"*","vif",vif);
-
 // RUN Test 
 run_test();
 end 
