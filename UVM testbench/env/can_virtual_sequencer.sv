@@ -1,0 +1,1 @@
+class can_virtual_sequencer extends 

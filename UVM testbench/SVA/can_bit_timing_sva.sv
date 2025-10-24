@@ -1,0 +1,1 @@
+class can_bit_timing_sva extends 

@@ -1,0 +1,1 @@
+class reg_agent extends uvm_component;

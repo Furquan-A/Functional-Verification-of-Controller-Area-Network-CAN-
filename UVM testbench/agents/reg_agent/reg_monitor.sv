@@ -1,0 +1,1 @@
+class reg_monitor extends uvm_component;

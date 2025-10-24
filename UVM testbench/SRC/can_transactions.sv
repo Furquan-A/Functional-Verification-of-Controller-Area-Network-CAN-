@@ -1,0 +1,1 @@
+class can_transactions extends uvm_transactions;

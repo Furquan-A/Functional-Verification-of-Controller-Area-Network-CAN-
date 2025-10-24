@@ -1,0 +1,1 @@
+class reg_sequencer extends uvm_components;

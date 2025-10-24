@@ -1,0 +1,1 @@
+class reg_driver extends uvm_component;

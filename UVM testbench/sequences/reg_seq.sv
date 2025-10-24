@@ -1,0 +1,1 @@
+class reg_seq extends uvm_items;

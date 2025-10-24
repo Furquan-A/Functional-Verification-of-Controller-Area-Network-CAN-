@@ -1,0 +1,1 @@
+class can_coverage extends uvm_items ;

@@ -1,0 +1,1 @@
+class can_sequence extends uvm_sequencer ;

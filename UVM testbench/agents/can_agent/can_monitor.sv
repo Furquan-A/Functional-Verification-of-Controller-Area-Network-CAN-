@@ -1,0 +1,1 @@
+class can_monitor extends uvm_component;

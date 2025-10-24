@@ -1,0 +1,1 @@
+class can_scoreboard extends uvm_scoreboard;

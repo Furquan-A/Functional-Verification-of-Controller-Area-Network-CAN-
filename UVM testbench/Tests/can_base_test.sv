@@ -1,0 +1,1 @@
+class can_base_test extends uvm_test;

@@ -1,0 +1,1 @@
+class can_driver extends uvm_componen
