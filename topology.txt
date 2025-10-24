@@ -1,0 +1,63 @@
+can_uvm_testbench/
+│
+├── 📄 Makefile                       # ✅ Top-level build automation
+├── 📄 can_top_tb.sv                  # ✅ DONE - Top-level testbench
+│
+├── 📁 if/
+│   ├── 📄 can_if.sv                  # ✅ DONE - Unified interface
+│   ├── 📄 wb_if.sv                   # Optional: Separate Wishbone interface
+│   └── 📄 legacy_if.sv               # Optional: Separate Legacy interface
+│
+├── 📁 bfm/
+│   └── 📄 can_bus_model.sv           # Wired-AND bus resolver for CAN
+│
+├── 📁 src/
+│   ├── 📄 can_pkg.sv                 # 🔥 START HERE - UVM package
+│   ├── 📄 can_defines.sv             # Register addresses & bit definitions
+│   ├── 📄 can_utils.sv               # Utility functions
+│   ├── 📄 can_config.sv              # Configuration objects
+│   ├── 📄 can_transaction.sv         # Transaction classes
+│   └── 📄 can_register_map.sv        # CAN controller register map
+│
+├── 📁 agents/
+│   ├── 📁 reg_agent/                 # Register access agent
+│   │   ├── 📄 reg_agent.sv           # Agent wrapper (WB/Legacy mode)
+│   │   ├── 📄 reg_driver.sv          # Uses vif.reg_write/read tasks
+│   │   ├── 📄 reg_monitor.sv         # Register transaction monitor
+│   │   └── 📄 reg_sequencer.sv       # Register sequencer
+│   │
+│   └── 📁 can_bus_agent/             # CAN physical layer agent
+│       ├── 📄 can_bus_agent.sv       # Agent wrapper (one virtual node)
+│       ├── 📄 can_bus_driver.sv      # CAN frame driver
+│       ├── 📄 can_bus_monitor.sv     # CAN bus monitor
+│       └── 📄 can_bus_sequencer.sv   # CAN sequencer
+│
+├── 📁 env/
+│   ├── 📄 can_env.sv                 # UVM environment (builds all agents)
+│   ├── 📄 can_virtual_sequencer.sv   # Coordinates reg + CAN sequencers
+│   ├── 📄 can_scoreboard.sv          # Functional checking
+│   └── 📄 can_coverage.sv            # Functional coverage collection
+│
+├── 📁 sequences/
+│   ├── 📄 can_base_seq.sv            # Base sequence classes
+│   ├── 📄 reg_sequences.sv           # Register access sequences
+│   ├── 📄 can_frame_sequences.sv     # CAN frame sequences
+│   └── 📄 can_virtual_sequences.sv   # Multi-agent orchestration
+│
+├── 📁 sva/
+│   ├── 📄 can_bit_timing_sva.sv      # Bit timing assertions
+│   ├── 📄 can_stuff_rule_sva.sv      # Bit stuffing rule checks
+│   └── 📄 can_frame_format_sva.sv    # Frame format compliance
+│
+├── 📁 tests/
+│   ├── 📄 can_base_test.sv           # Base test class
+│   ├── 📄 can_basic_test.sv          # Basic functionality test
+│   ├── 📄 can_error_test.sv          # Error injection test
+│   └── 📄 can_stress_test.sv         # Stress/multi-node test
+│
+└── 📁 scripts/
+    ├── 📄 Makefile                   # Scripts-specific automation
+    ├── 📄 run.f                      # File list for compilation
+    ├── 📄 compile.f                  # Compilation options & defines
+    ├── 📄 testlist.json              # Test configurations
+    └── 📄 regression.py              # Python regression script
