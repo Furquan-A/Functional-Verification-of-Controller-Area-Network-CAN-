@@ -35,6 +35,16 @@ class reg_txn extends uvm_sequence_item;
 
   // ---- Constraints (basic sanity) ----
   constraint c_be_one { be == 1'b1; } // 8-bit bus → always enabled
+  
+ 
+  constraint valid_addr_c {
+  addr inside {
+    [`CAN_MODE_REG:`CAN_BUS_TIMING_1],           // Valid CAN registers
+    [`CAN_TX_BUFFER_START:`CAN_TX_BUFFER_START+13],
+    [`CAN_RX_BUFFER_START:`CAN_RX_BUFFER_START+12]
+  };
+}
+
 
   // ---- Ctors / convenience ----
   function new(string name="reg_txn");
