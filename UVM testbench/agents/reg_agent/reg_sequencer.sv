@@ -1,4 +1,4 @@
-class reg_sequencer extends uvm_sequencer#(reg_txns);
+class reg_sequencer extends uvm_sequencer#(reg_transactions);
 `uvm_component_utils(reg_sequencer)
 
 function new(string name = "reg_sequencer", uvm_component parent);
