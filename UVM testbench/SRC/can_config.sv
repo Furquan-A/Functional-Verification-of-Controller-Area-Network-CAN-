@@ -1,1 +1,0 @@
-class can_config extends uvm_items;
