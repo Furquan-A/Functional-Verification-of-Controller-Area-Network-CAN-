@@ -4,7 +4,7 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-class reg_sequencer extends uvm_sequencer#(reg_transactions);
+class reg_sequencer extends uvm_sequencer#(reg_txn);
 `uvm_component_utils(reg_sequencer)
 
 function new(string name = "reg_sequencer", uvm_component parent);
@@ -18,4 +18,4 @@ endfunction
 
 endclass 
 
-`endif
+`endif 
