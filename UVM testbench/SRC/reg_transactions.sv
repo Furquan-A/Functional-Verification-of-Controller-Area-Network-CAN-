@@ -1,6 +1,6 @@
 // src/reg_transaction.sv
-`ifndef REG_TRANSACTION_SV
-`define REG_TRANSACTION_SV
+`ifndef REG_TXN_SV
+`define REG_TXN_SV
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
@@ -86,4 +86,4 @@ class reg_txn extends uvm_sequence_item;
 
 endclass : reg_txn
 
-`endif // REG_TRANSACTION_SV
+`endif // REG_TXN_SV
