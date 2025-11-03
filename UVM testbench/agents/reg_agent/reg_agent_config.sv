@@ -3,6 +3,8 @@ typedef enum int {REG_BUS_AUTO = 0, REG_BUS_WB = 1, REG_BUS_LEGACY = 2} reg_bus_
 class reg_agent_config extends uvm_objects;
 `uvm_objects_utils(reg_agent_config)
 
+uvm_active_passive_enum is_active = UVM_ACTIVE;  
+ 
 rand reg_bus_e bus = REG_BUS_AUTO;
 
 virtual can_if vif; // single handle for the can_if
