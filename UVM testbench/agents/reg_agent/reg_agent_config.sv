@@ -8,6 +8,18 @@ uvm_active_passive_enum is_active = UVM_ACTIVE;
 rand reg_bus_e bus = REG_BUS_AUTO;
 
 virtual can_if vif; // single handle for the can_if
+bit checks_enable;
+bit coverage_enable;
+bit debug_mode;
+time total_latency = 0;
+time min_latency = 0;
+time max_latency = 0;
+int unsigned num_writes = 0; // writes count 
+int unsigned num_reads = 0; // reads count 
+int unsigned num_errors = 0; // errors count 
+
+
+
 
 // tracing knobs (optional) but extremely helpful for the debugging while running the tb 
 // trace_op tells the reg_driver and reg_monitor whether to print register operations
