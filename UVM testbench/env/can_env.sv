@@ -72,3 +72,12 @@ function void env :: build_phase (uvm_phase phase);
 		end 
 		
 endfunction : build_phase 
+
+// ========================================================================================
+// ============================== connect_phase ===========================================
+
+function void env::connect_phase(uvm_phase phase);
+	super.connect_phase(phase);
+	// connect the interface of the design to the interface of the config 
+	vif = m_cfg.vif;
+endfunction 
