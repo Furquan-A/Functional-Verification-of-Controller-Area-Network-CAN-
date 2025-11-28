@@ -10,7 +10,7 @@ class env extends uvm_env;
 	reg_agent r_agent[];
 	
 	can_scoarboard c_sb;
-	can_virtaul_sequencer can_vseqrh;
+	can_virtual_sequencer can_vseqrh;
 	can_env_config m_cfg;
 	// can_coverage c_cvg;
 	
@@ -18,7 +18,7 @@ class env extends uvm_env;
 	extern function void build_phase(uvm_phase phase);
 	extern function void connect_phase(uvm_phase phase);
 	
-endfunction
+endclass
 
 // ========================================================================================
 // ============================ new =======================================================
@@ -33,7 +33,7 @@ endfunction
 function void env :: build_phase (uvm_phase phase);
 	super.build_phase(phase);
 	
-	if(!uvm_config_db#(can_env_config)::get(this,"","can_env_config",m_cfg)
+	if(!uvm_config_db#(can_env_config)::get(this,"","can_env_config",m_cfg))
 		`uvm_fatal("ENV CONFIG","cannot get() the config from the config_db. did you set() it ?")
 	
 	if(m_cfg.has_can_agent)
@@ -42,7 +42,7 @@ function void env :: build_phase (uvm_phase phase);
 			foreach(c_agent[i])
 				begin 
 					c_agent[i] = can_agent::type_id::create($sformatf("c_agent[%0d]",i),this);
-					uvm_config_db#(can_env_config)::set(this,$sformatf("c_agent[%0d]*"),"can_agent",m_cfg.c_cfg[i]);
+					uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent[%0d]*"),"m_cfg",m_cfg.c_cfg[i]);
 				end 
 		end 
 		
@@ -52,7 +52,7 @@ function void env :: build_phase (uvm_phase phase);
 			foreach(r_agent[i])
 				begin 
 					r_agent[i] = reg_agent::type_id::create($sformatf("r_agent[%0d]",i),this);
-					uvm_config_db#(can_env_config)::set(this,$sformatf("r_agent[%0d]*"),"reg_agent",m_cfg.r_cfg[i]);
+					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent[%0d]*"),"m_cfg",m_cfg.r_cfg[i]);
 				end 
 		end 
 		
@@ -78,8 +78,23 @@ endfunction : build_phase
 
 function void env::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
-	// connect the interface of the design to the interface of the config 
-	vif = m_cfg.vif;
+	
+	if(c_sb != null)
+		begin 
+			foreach(c_agent[i])
+				c_agent[i].ap.connect(c_sb.can_export); 
+			foreach
+				r_agent[i].ap.connect(c_sb.reg_export);
+		end 
+		
+	if(can_vseqrh != null)
+		begin 
+			foreach(r_agent[i])
+				can_vseqrh.reg_sqrs[i] = r_agent[i].rseqrh;
+			foreach 
+				can_vseqrh.can_sqrs[i] = c_agent[i].cseqrh;
+		end 
+		
 endfunction 
 
 // =======================================================================================
