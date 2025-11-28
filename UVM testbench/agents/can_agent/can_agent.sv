@@ -1,3 +1,10 @@
+// agents/can_bus_agent/can_agent.sv
+`ifndef CAN_AGENT_SV
+`define CAN_AGENT_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 class can_agent extends uvm_agent;
 
 	`uvm_component_utils(can_agent)
@@ -60,3 +67,5 @@ function void can_agent:: connect_phase(uvm_phase phase);
 	vif = c_cfg.vif; 
 	
 endfunction : connect_phase
+
+`endif // CAN_AGENT_SV
