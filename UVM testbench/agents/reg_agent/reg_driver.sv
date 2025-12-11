@@ -8,11 +8,13 @@ class reg_driver extends uvm_driver #(reg_transaction);
 
 	`uvm_component_utils(reg_driver)
 	
-	can_env_config env_cfg;
+	
 	reg_agent_config r_cfg;
 	
 	// virtual Interface 
 	virtual can_if vif;
+	
+	
 	
 	extern function new( string name = "reg_driver", uvm_component parent );
 	extern function void build_phase(uvm_phase phase);
@@ -33,19 +35,72 @@ endfunction
 
 function void reg_driver :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
-	
-	if(!uvm_config_db#(can_env_config) :: get(this,"can_env_config",env_cfg)
-		`uvm_fatal("ENV_CFG","cannot get the env_cfg from db. did you set it ?")
 		
 	if(!uvm_config_db#(reg_agent_config) :: get(this,"reg_agent_config",r_cfg)
 		`uvm_fatal("DRIVER config ","cannot get the CONFIG from db. did you set it ?")
-
-endfunction 
-
-// ================================== connect_phase =====================================================
-
-function void reg_driver :: connect_phase(uvm_phase phase);
-	super.connect_phase(phase);
+		
+	// sanity check config 
+	string why;
+	if(!r_cfg.validate(why)
+		`uvm_fatal("REG_DRIVER,"$sformaatf("Invalid reg_agent_config: %s",why)
+	
+	// Cache Virtual Interface 
 	vif = r_cfg.vif;
-endfunction 
+	if(vif==null)
+		`uvm_fatal("REG_DRIVER","vif is null in the reg_driver")
+		
+	`uvm_info("REG_DRV", $sformatf("Driver ready on %s bus (trace_ops=%0b)", m_cfg.bus_name(), m_cfg.trace_ops), UVM_LOW)
+	
+ endfunction
 
+// ====================== run_phase ======================================================================
+task reg_driver :: run_phase(uvm_phase phase);
+	reg_transaction req;
+	`uvm_info("REG_DRIVER","reg_driver started run_phase",UVM_LOW);
+	
+	forever
+		begin 
+			// 1. block until the seequence sends us a transaction 
+			start_item_port_get_next_item(req);
+			
+			// call the send to dut method to perform the operations 
+			send_to_dut(req); // <-- All DUT actions are handled here 
+			
+			// tell the sequencer we're done
+			seq_item_port.item_done(req);
+		end 
+endtask 
+			
+// ============================== send_to_dut ==========================================================
+
+task reg_driver :: send_to_dut(reg_transaction req);
+
+	
+	// perform the operation via interface 
+	t.t_start = $time;
+	if(req.is_write())
+		begin 
+			vif.reg_write(req.addr,req.wdata);
+			r_cfg.wr_cnt++;
+		if(r_cfg.trace_ops)
+			begin 
+				`uvm_info("REG_DRV",$sformatf("[%s] WR @0x%02h = 0x%02h",vif.USE_WB ? "WB" : "LEG",t.addr, t.wdata),UVM_LOW)
+			end
+		end
+	else 
+		begin 
+			byte unsigned q;
+			vif.reg_read(req.addr,q);
+			req.rdata = q;
+			r_cfg.rd_cnt++;
+					
+			if (m_cfg.trace_ops) 
+				begin
+					`uvm_info("REG_DRV",$sformatf("[%s] RD @0x%02h -> 0x%02h",vif.USE_WB ? "WB" : "LEG", t.addr, t.rdata),UVM_LOW)
+				end 
+		end 
+		
+	t.t_end = $time;
+	req.success = 1'b1; // mark transaction is successful	
+endtask 
+		

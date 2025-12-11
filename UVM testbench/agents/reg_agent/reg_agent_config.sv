@@ -19,8 +19,11 @@ class reg_agent_config extends uvm_object;
   // Optional: expected bus (for sanity/logs; can leave AUTO)
   rand reg_bus_e expect_bus = REG_BUS_AUTO;
 
-  // Simple tracing toggle used by the driver
+  // Simple tracing , print every register operation 
   rand bit trace_ops = 1'b1;
+  
+  int unsigned wr_cnt = 0;
+  int unsigned rd_cnt = 0;
 
   function new(string name="reg_agent_config");
     super.new(name);

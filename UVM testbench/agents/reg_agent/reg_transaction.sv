@@ -24,6 +24,15 @@ class reg_transaction extends uvm_sequence_item;
 	bit [7:0] rdata; // read data (driver fills the read)
 	bit success; // 1 = OK, 0 = timeout/Failure
 	
+	/* 
+	✔ These timestamps are optional metadata
+	They allow you to measure:
+	How long a register operation takes
+	Time spacing between operations
+	When a reg request was issued vs when CAN events occurred
+L	atency correlation between reg ops and CAN bus behavior
+	*/
+	
 	time t_start;
 	time t_end;
 	
