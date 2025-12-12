@@ -323,7 +323,6 @@ endclass
 // here we are just using the txreq command as an action to be performed 
 // We can use other commands like ABORT, OVERRUN based on the tests we are running 
 
-
 `ifdef REG_TXREQ_SEQ_SV
 `define REG_TXREQ_SEQ_SV
 
@@ -351,3 +350,127 @@ endclass: reg_txreq_seq
 
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
+// REG_ABORT_TX_SEQ 
+
+`ifdef REG_ABORT_TX_SEQ_SV
+`define REG_ABORT_TX_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+`include "can_defines.sv"
+
+class reg_abort_tx_seq extends reg_base_seq;
+	`uvm_object_utils(reg_abort_tx_seq)
+	
+	function new(string name = "reg_abort_tx_seq");
+		super.new(name);
+	endfunction 
+	
+	virtual task body();
+		`uvm_info("REG_ABORT_TX_SEQ","Issuing ABORT_TX command to CAN controller...",UVM_MEDIUM)
+		
+		// COMMAND register bit0 = TREQ ( CAN_CMD_TREQ_M)
+		write_reg`(CAN_COMMAND_REG,`CAN_CMD_ABORT_M);
+		
+		`uvm_info("REG_ABORT_TX_SEQ","ABORT_TX command sent successfully.", UVM_MEDIUM)
+	endtask 
+endclass : reg_abort_tx_seq
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// REG_RELEASE_RX_BUFFER_SEQ
+// sequences/reg_release_rx_buffer_seq.sv
+
+`ifndef REG_RELEASE_RX_BUFFER_SEQ_SV
+`define REG_RELEASE_RX_BUFFER_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+`include "can_defines.sv"
+
+class reg_release_rx_buffer_seq extends reg_base_seq;
+  `uvm_object_utils(reg_release_rx_buffer_seq)
+
+  function new(string name="reg_release_rx_buffer_seq");
+    super.new(name);
+  endfunction
+
+  // ---------------------- MAIN BODY ----------------------
+  virtual task body();
+    `uvm_info("REG_REL_RX_BUF_SEQ","Releasing RX buffer (COMMAND bit2)...", UVM_MEDIUM)
+
+    // COMMAND bit2 = RELEASE_BUFFER
+    write_reg(`CAN_COMMAND_REG, `CAN_CMD_REL_RX_M);
+
+    `uvm_info("REG_REL_RX_BUF_SEQ","RX buffer released.", UVM_MEDIUM)
+  endtask : body
+
+endclass : reg_release_rx_buffer_seq
+
+`endif // REG_RELEASE_RX_BUFFER_SEQ_SV
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// sequences/reg_clear_overrun_seq.sv
+
+`ifndef REG_CLEAR_OVERRUN_SEQ_SV
+`define REG_CLEAR_OVERRUN_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+`include "can_defines.sv"
+
+class reg_clear_overrun_seq extends reg_base_seq;
+  `uvm_object_utils(reg_clear_overrun_seq)
+
+  function new(string name="reg_clear_overrun_seq");
+    super.new(name);
+  endfunction
+
+  // ---------------------- MAIN BODY ----------------------
+  virtual task body();
+    `uvm_info("REG_CLR_OVR_SEQ","Clearing RX overrun condition (COMMAND.CLR_OVR)...", UVM_MEDIUM)
+
+    // COMMAND bit3 → CLEAR DATA OVERRUN
+    write_reg(`CAN_COMMAND_REG, `CAN_CMD_CLR_OVR_M);
+
+    `uvm_info("REG_CLR_OVR_SEQ", "RX overrun cleared.", UVM_MEDIUM)
+	
+  endtask : body
+
+endclass : reg_clear_overrun_seq
+
+`endif // REG_CLEAR_OVERRUN_SEQ_SV
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// sequences/reg_self_rx_seq.sv
+
+`ifndef REG_SELF_RX_SEQ_SV
+`define REG_SELF_RX_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+`include "can_defines.sv"
+
+class reg_self_rx_seq extends reg_base_seq;
+  `uvm_object_utils(reg_self_rx_seq)
+
+  function new(string name="reg_self_rx_seq");
+    super.new(name);
+  endfunction
+
+  // ---------------------- MAIN BODY ----------------------
+  virtual task body();
+    `uvm_info("REG_SELF_RX_SEQ", "Triggering SELF-RECEPTION (COMMAND.SELF_RX_REQ)...", UVM_MEDIUM)
+
+    // COMMAND bit4 → SELF RX REQUEST
+    write_reg(`CAN_COMMAND_REG, `CAN_CMD_SELF_RX_M);
+
+    `uvm_info("REG_SELF_RX_SEQ","ELF RX request issued.", UVM_MEDIUM)
+  endtask : body
+
+endclass : reg_self_rx_seq
+
+`endif // REG_SELF_RX_SEQ_SV
