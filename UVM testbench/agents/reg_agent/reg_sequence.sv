@@ -206,5 +206,14 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 			end
 			
 		// ENABLE EXTENDED MODE 
-		
+		if(use_extended_mode) 
+			begin 
+				/* Clock Divider (bit7 = extended_mode) must be written FIRST before any extended-mode
+				registers can be programmed.It does NOT configure IRQs or filters; 
+				it only switches the register map. 
+				*/
+				byte clkdiv = `CAN_CLKDIV_EXTENDED_M;
+				write_reg(`CAN_CLOCK_DIVIDER,clkdiv);
+				
+			end 
 	
