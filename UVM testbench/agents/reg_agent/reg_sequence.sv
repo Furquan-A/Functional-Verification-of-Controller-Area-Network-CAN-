@@ -260,7 +260,7 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 	virtual task body();
 		`uvm_info("REG_LOAD_TX_BUFFER_SEQUENCE",$sformatf("loading TX Buffer: ID = %0h DLC = %0d EXT = %0b",can_id,dlc,use_extended_mode),UVM_MEDIUM)
 		
-		// Validation 
+		// --------------- Validation -------------------
 		if(dlc > 8)
 			begin 
 				`uvm_fatal("TXBUF_SEQ","DLC>8 is illigal for classic CAN !")
@@ -270,20 +270,46 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 				uvm_fatal("TXBUF_SEQ","data[] size does not match the DLC ")
 			end 
 			
-		// 1. Write ID, Control fields into the TX buffer register 
+		// -------------------1. Write ID, Control fields into the TX buffer register -------------------
 		// Your DUT uses TX_DATA0..TX_DATA9 (11-bit ID encoded in register bytes)
 		// For standard CAN, ID is 11 bits → write into TX_DATA_0 and TX_DATA_1
-		byte id_high = can_id[10:3];
-		write_reg(`CAN_TX_DATA0_BASIC,id_high); // loading the upper bits of id into one data reg of 8 bits 
-		write_reg(`CAN_TX_DATA0_BASIC+1,id_low | (can_fmt <<1)| 0); // it is basically can_id[2;0] + IDE + RTR
-		
-		
-		// Now the DLC which has 4 bits 
-		write_reg(`CAN_TX_DATA0_BASIC + 2, dlc);
-		
-		// Data bytes 
-		foreach(data[i])
+		if(!use_extended_mode)
 			begin 
-				write_reg(`CAN_TX_DATA0_BASIC + 3 + i, data[i]);
+			
+				byte id_high = can_id[10:3];
+				write_reg(`CAN_TX_DATA0_BASIC,id_high); // loading the upper bits of id into one data reg of 8 bits 
+				write_reg(`CAN_TX_DATA0_BASIC+1,id_low | (can_fmt <<1)| 0); // it is basically can_id[2;0] + IDE + RTR
+				
+				
+				// Now the DLC which has 4 bits 
+				write_reg(`CAN_TX_DATA0_BASIC + 2, dlc);
+				
+				// Data bytes 
+				foreach(data[i])
+					begin 
+						write_reg(`CAN_TX_DATA0_BASIC + 3 + i, data[i]);
+					end 
 			end 
+		else // extended mode active 
+			begin 
+				// In EXT mode, your RTL maps TX_DATA0..TX_DATA12 at addresses 0x10..0x1C
+				// write ID across Multiple bytes (29 bits)	
+				write_reg(`CAN_TX_DATA0_EXT,can_id[28:21]);
+				write_reg(`CAN_TX_DATA0_EXT+1,can_id[20:13]);
+				write_reg(`CAN_TX_DATA0_EXT+2,can_id[12:5]);
+				write_reg(`CAN_TX_DATA0_EXT+3,can_id[4:0],3'b000); // can_id[4:0] + padding after the frame  
+				
+				// DLC register 
+				write_reg(`CAN_TX_DATA0_EXT+4,dlc);
+				
+				// DATA Bytes 
+				foreach (data[i]) 
+					begin
+						write_reg(`CAN_TX_DATA0_EXT + 5 + i, data[i]);
+					 end
+			end
 		
+		 `uvm_info("REG_LOAD_TX_BUF","TX buffer load complete.",UVM_MEDIUM)
+	endtask : body
+endclass 
+`endif : REG_LOAD_TX_BUFFER_SEQUENCE_SV
