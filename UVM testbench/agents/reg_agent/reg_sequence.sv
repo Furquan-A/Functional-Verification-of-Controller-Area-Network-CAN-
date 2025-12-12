@@ -148,6 +148,12 @@ endclass : reg_read_seq
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
 //  REG INIT SEQUENCE
+// WHAT IT DOES ? 
+// Pts DUT into RESET
+// programs BTR0 and BTR1 ( bit timing )
+// Sets Acceptance filter (BASIC or EXTENDED)
+// Enable extended mode 
+// Exits RESET mode and gets back to the normal mode 
 
 `ifndef REG_INIT_SEQ_SV
 `define REG_INIT_SEQ_SV
@@ -214,6 +220,15 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 				*/
 				byte clkdiv = `CAN_CLKDIV_EXTENDED_M;
 				write_reg(`CAN_CLOCK_DIVIDER,clkdiv);
-				
+				 `uvm_info("REG_INIT_SEQ", "Extended mode enabled", UVM_LOW)
 			end 
+			
+		// EXIT RESET MODE -> Normal Operation 
+		write_reg(`CAN_MODE_REG,8'h00); // clear reset bit 
+		`uvm_info("REG_INIT_SEQ","CAN controller initialization COMPLETE",UVM_MEDIUM)
+	endtask : body
+
+endclass : reg_init_seq
+
+`endif
 	
