@@ -93,3 +93,37 @@ endclass : reg_base_seq
 `endif
 
 
+// WRITE SEQUENCES 
+
+class reg_write_seq extends reg_base_seq;
+
+	`uvm_object_utils(reg_write_seq);
+	 
+	// inputs to the sequence 
+	randc bit [7:0] addr;
+	randc bit [7:0] data;
+	
+	function new (string name = "reg_write_seq");
+		super.new(name);
+	endfunction 
+	
+	// The body uses the simple base class helpers 
+	virtual task body();
+		`uvm_info("REG_WRITE_SEQ",$sformatf("WRITE: addr = 0x%02h data = 0x%02",addr,data),UVM_MEDIUM)
+		
+		write_reg(addr,data);
+	endtask 
+	
+endclass : reg_write_seq
+
+// READ SEQUENCES 
+class reg_read_seq extends reg_base_seq;
+	`uvm_object_utils(reg_read_seq)
+	
+	// input argument
+	randc bit[7:0] addr;
+	
+	// output of the read 
+	output bit[7:0] data_out;
+	
+
