@@ -147,7 +147,64 @@ endclass : reg_read_seq
 
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
-//  REG INIT SEQUENCE 
-class reg_init_seqs extends reg_base_seq;
+//  REG INIT SEQUENCE
+
+`ifndef REG_INIT_SEQ_SV
+`define REG_INIT_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+ 
+`include "can_defines.sv"
+
+class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operation
+
 	`uvm_object_utils(reg_init_seqs)
+	
+	// configuration fields ( can be randomized or assigned in TEST) ----
+	rand bit use_extended_mode = 1'b1; // 0 = basic mode, 1 = extended mode 
+	rand byte btr0_config; // packed BRP + SJW
+	rand byte btr1_config; // packed TSEG1 + TSEG2 + Triple_samp
+	rand byte acc_code0; // default acceptance code 
+	rand byte acc_mask0; // default acceptance mask 
+		
+	function new(string name = "reg_init_seqs");
+		super.new(name);
+	endfunction
+	
+	// ---------------------------------------------------------------
+	// Main initialization body()
+	//----------------------------------------------------------------
+	virtual task body();
+		`uvm_info("REG_INIT_SEQ","Starting Can Controller initialization", UVM_MEDIUM)
+		
+		// ENTER RESET MODE 
+		byte mode_reset = `CAN_MODE_RESET_M; // bit 0 = reset mode 
+		write_reg(`CAN_MODE_REG,mode_reset);
+		
+		// PROGRAM BIT TIMING BTR0 and BTR1
+		write_reg(`CAN_BUS_TIMING_0,btr0_config);
+		write_reg(`CAN_BUS_TIMING_1,btr1_config);
+		
+		// PROGRAM ACCEPTANCE FILTER ( BASIC or EXTENDED)
+		if(!use_extended_mode)
+			begin 
+				write_reg(`CAN_ACC_CODE0_BASIC,acc_code0);
+				write_reg(`CAN_ACC_MASK0_BASIC,acc_mask0);
+			end 
+		else 
+			begin 
+				write_reg(`CAN_ACC_CODE0_EXT,acc_code0);
+				write_reg(`CAN_ACC_MASK0_EXT,acc_mask0);
+				// optonal: others to zero 
+				write_reg(`CAN_ACC_CODE1_EXT, 8'h00); // 00 means any value can be passed 
+				write_reg(`CAN_ACC_CODE2_EXT, 8'h00);
+				write_reg(`CAN_ACC_CODE3_EXT, 8'h00);
+				write_reg(`CAN_ACC_MASK1_EXT, 8'hFF); // FF means n value should be chaked and compared with the code 
+				write_reg(`CAN_ACC_MASK2_EXT, 8'hFF);
+				write_reg(`CAN_ACC_MASK3_EXT, 8'hFF);
+			end
+			
+		// ENABLE EXTENDED MODE 
+		
 	
