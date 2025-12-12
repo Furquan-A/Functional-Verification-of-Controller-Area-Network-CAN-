@@ -12,6 +12,7 @@
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
+`include "can_defines.sv"
 
 class reg_base_seq  extends uvm_sequence #(reg_transaction);
 	
@@ -95,7 +96,7 @@ endclass : reg_base_seq
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
 // WRITE SEQUENCES 
-
+`include "can_defines.sv"
 class reg_write_seq extends reg_base_seq;
 
 	`uvm_object_utils(reg_write_seq);
@@ -241,6 +242,7 @@ endclass : reg_init_seq
 
 `include "uvm_macros.svh"
 import "uvm_pkg::*;
+`include "can_defines.sv"
 
 class reg_load_tx_buffer_seq extends reg_base_seq;
 	`uvm_object_utils(reg_load_tx_buffer_seq)
@@ -324,8 +326,25 @@ endclass
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
+`include "can_defines.sv"
 
 class reg_txreq_seq extends reg_base_seq;
 	`uvm_object_utils(reg_txreq_seq)
 	
+	function new(string name = "reg_txreq_seq");
+		super.new(name);
+	endfunction 
 	
+	virtual task body();
+		`uvm_info("REG_TXREQ_SEQ","Issuing TXREQ command to CAN controller...",UVM_MEDIUM)
+		
+		// COMMAND register bit0 = TREQ ( CAN_CMD_TREQ_M)
+		write_reg(`CAN_COMMAND_REG,`CAN_CMD_TXREQ_M);
+		
+		`uvm_info("REG_TXREQ_SEQ","TXREQ command sent successfully.", UVM_MEDIUM)
+	endtask 
+endclass: reg_txreq_seq
+`endif
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
