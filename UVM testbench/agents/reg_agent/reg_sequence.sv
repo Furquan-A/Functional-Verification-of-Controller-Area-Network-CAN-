@@ -320,6 +320,9 @@ endclass
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
 // REG_TXREQ_SEQUENCE 
+// here we are just using the txreq command as an action to be performed 
+// We can use other commands like ABORT, OVERRUN based on the tests we are running 
+
 
 `ifdef REG_TXREQ_SEQ_SV
 `define REG_TXREQ_SEQ_SV
