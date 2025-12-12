@@ -232,3 +232,21 @@ endclass : reg_init_seq
 
 `endif
 	
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// REG_LOAD_TX_BUFFER_SEQUENCE 
+`ifdef REG_LOAD_TX_BUFFER_SEQUENCE_SV
+`define REG_LOAD_TX_BUFFER_SEQUENCE_SV
+
+`include "uvm_macros.svh"
+import "uvm_pkg::*;
+
+class reg_load_tx_buffer_seq extends reg_base_seq;
+	`uvm_object_utils(reg_load_tx_buffer_seq)
+	
+	rand bit can_fmt; // BASIC or EXTENDED 
+	rand bit [28:0] can_id; // 11 bits for BASIC 29 bits for EXTENDED 
+	rand bit [3:0] dlc; // data length 
+	rand byte unsigned data[]; // ppayload array ( sixe == dlc)
+	
+	
