@@ -241,7 +241,7 @@ endclass : reg_init_seq
 `define REG_LOAD_TX_BUFFER_SEQUENCE_SV
 
 `include "uvm_macros.svh"
-import "uvm_pkg::*;
+import uvm_pkg::*;
 `include "can_defines.sv"
 
 class reg_load_tx_buffer_seq extends reg_base_seq;
