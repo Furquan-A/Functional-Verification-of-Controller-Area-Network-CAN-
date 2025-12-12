@@ -126,4 +126,17 @@ class reg_read_seq extends reg_base_seq;
 	// output of the read 
 	output bit[7:0] data_out;
 	
+	function new(string name = "reg_write_seq");
+		super.new(name);
+	endfunction 
+	
+	virtual task body();
+		`uvm_info("REG_READ_SEQ",$sformatf("READ data at addr = 0x%02h",addr),UVM_MEDIUM)
+		
+		read_reg(addr,data_out);
+		
+		`uvm_info("REG_READ_SEQ",  $sformatf("READ: addr=0x%02h -> data=0x%02h", addr, data_out), UVM_MEDIUM)
+	endtask 
+	
+endclass : reg_read_seq
 
