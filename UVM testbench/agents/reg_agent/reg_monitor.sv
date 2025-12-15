@@ -71,6 +71,9 @@ task reg_monitor :: run_phase(uvm_phase phase)
 							t.success = 1'b1;
 							ap.write(t);
 					end 
-				`else 
+				`else // LEGACY MODE 
+					@(posedge vif.lg_cb.clk_i);
+					
+				
 	
 	
