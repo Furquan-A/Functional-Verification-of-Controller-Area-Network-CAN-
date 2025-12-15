@@ -468,9 +468,190 @@ class reg_self_rx_seq extends reg_base_seq;
     // COMMAND bit4 → SELF RX REQUEST
     write_reg(`CAN_COMMAND_REG, `CAN_CMD_SELF_RX_M);
 
-    `uvm_info("REG_SELF_RX_SEQ","ELF RX request issued.", UVM_MEDIUM)
+    `uvm_info("REG_SELF_RX_SEQ","SELF RX request issued.", UVM_MEDIUM)
   endtask : body
 
 endclass : reg_self_rx_seq
 
 `endif // REG_SELF_RX_SEQ_SV
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// REG_ENABLE_IRQ_SEQ
+
+class reg_enable_irq_seq extends reg_base_seq;
+	`uvm_object_utils(reg_enable_irq_seq)
+	
+	rand byte irq_enable_mask = 8'bFF; // enable all by default 
+	
+	function new (string name = "reg_enable_irq_seq");
+		super.new(name);
+	endfunction 
+	
+	virtual task body();
+		`uvm_info("REG_ENABLE_IRQ_SEQ", $sformatf("Enabling IRQs: mask=0x%02h", irq_enable_mask), UVM_MEDIUM)
+		
+		write_reg(`CAN_IRQ_EN_EXT,irq_enable_mask);
+	endtask 
+	
+endclass
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// REg_CLEAR_IRQ_SEQ
+
+class reg_clear_irq_seq extends reg_base_seq;
+  `uvm_object_utils(reg_clear_irq_seq)
+
+  byte irq_value;
+
+  function new(string name="reg_clear_irq_seq");
+	super.new(name);
+  endfunction
+
+  virtual task body();
+    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM)
+	
+    read_reg(`CAN_IRQ_REG, irq_value);
+  endtask
+  
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// REG_LISTEN_ONLY_SEQ
+
+class reg_set_listen_only_seq extends reg_base_seq;
+  `uvm_object_utils(reg_set_listen_only_seq)
+
+  function new(string name="reg_set_listen_only_seq"); 
+	super.new(name); 
+  endfunction
+
+  virtual task body();
+    `uvm_info("REG_LISTEN_ONLY_SEQ", "Entering LISTEN-ONLY mode", UVM_MEDIUM)
+	
+    write_reg(`CAN_MODE_REG, `CAN_MODE_LISTEN_ONLY_M);
+  endtask
+  
+endclass
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+//  reg_clear_irq_seq  (read-to-clear behaviour)
+
+class reg_clear_irq_seq extends reg_base_seq;
+  `uvm_object_utils(reg_clear_irq_seq)
+
+  byte irq_value;
+
+  function new(string name="reg_clear_irq_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM)
+    read_reg(`CAN_IRQ_REG, irq_value);
+  endtask
+endclass
+
+
+// ====================================================================================================================================================================
+// ====================================================================================================================================================================
+// reg_set_listen_only_seq  (MODE bit1)
+
+class reg_set_listen_only_seq extends reg_base_seq;
+  `uvm_object_utils(reg_set_listen_only_seq)
+
+  function new(string name="reg_set_listen_only_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_LISTEN_ONLY_SEQ", "Entering LISTEN-ONLY mode", UVM_MEDIUM)
+    write_reg(`CAN_MODE_REG, `CAN_MODE_LISTEN_ONLY_M);
+  endtask
+endclass
+
+// ============================================================================
+//  reg_set_self_test_mode_seq (MODE bit2)
+// ============================================================================
+class reg_set_self_test_mode_seq extends reg_base_seq;
+  `uvm_object_utils(reg_set_self_test_mode_seq)
+
+  function new(string name="reg_set_self_test_mode_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_SELF_TEST_SEQ", "Enabling SELF-TEST mode", UVM_MEDIUM)
+    write_reg(`CAN_MODE_REG, `CAN_MODE_SELF_TEST_M);
+  endtask
+endclass
+
+
+// ============================================================================
+//  reg_set_accept_all_seq  (accept EVERY ID)
+// ============================================================================
+class reg_set_accept_all_seq extends reg_base_seq;
+  `uvm_object_utils(reg_set_accept_all_seq)
+
+  function new(string name="reg_set_accept_all_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_ACC_ALL_SEQ", "Programming ACCEPT-ALL filters", UVM_MEDIUM)
+    write_reg(`CAN_ACC_CODE0_BASIC, 8'h00);
+    write_reg(`CAN_ACC_MASK0_BASIC, 8'hFF);   // ignore all bits → accept all
+  endtask
+endclass
+
+// ============================================================================
+//  reg_set_accept_none_seq  (ACCEPT **NO** ID except 0)
+// ============================================================================
+class reg_set_accept_none_seq extends reg_base_seq;
+  `uvm_object_utils(reg_set_accept_none_seq)
+
+  function new(string name="reg_set_accept_none_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_ACC_NONE_SEQ", "Programming ACCEPT-NONE filters", UVM_MEDIUM)
+    write_reg(`CAN_ACC_CODE0_BASIC, 8'h00);
+    write_reg(`CAN_ACC_MASK0_BASIC, 8'h00);   // compare all bits → only ID=0 accepted
+  endtask
+endclass
+
+
+// ============================================================================
+//  reg_poll_status_seq (simple, no timeouts)
+// ============================================================================
+class reg_poll_status_seq extends reg_base_seq;
+  `uvm_object_utils(reg_poll_status_seq)
+
+  byte status;
+   function new(string name="reg_poll_status_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_POLL_STATUS_SEQ",
+              "Polling STATUS register until TX_COMPLETE or RX_READY...",
+              UVM_MEDIUM)
+
+    // Simple busy wait (Type A)
+    repeat (1000) begin
+      read_reg(`CAN_STATUS_REG, status);
+      if (status[`CAN_ST_TX_COMPLETE_BIT] || status[`CAN_ST_RX_RDY_BIT])
+        break;
+      #1ns;
+    end
+  endtask
+endclass
+
+
+// ============================================================================
+//  reg_reset_seq  (enter RESET mode)
+// ============================================================================
+class reg_reset_seq extends reg_base_seq;
+  `uvm_object_utils(reg_reset_seq)
+
+  function new(string name="reg_reset_seq"); super.new(name); endfunction
+
+  virtual task body();
+    `uvm_info("REG_RESET_SEQ",
+              "Asserting RESET mode on CAN controller.",
+              UVM_MEDIUM)
+
+    write_reg(`CAN_MODE_REG, `CAN_MODE_RESET_M);
+  endtask
+endclass
