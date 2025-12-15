@@ -3,6 +3,7 @@
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
+`include "can_defines.sv"
 
 class reg_monitor extends uvm_component;
 	`uvm_component_utils(reg_monitor)
@@ -11,15 +12,13 @@ class reg_monitor extends uvm_component;
 	
 	virtual can_if vif;
 	reg_agent_config r_cfg;
-	reg_transaction t;
+		
 	
-	env_config env_cfg;
 	
 	extern function new(string name = "reg_monitor",uvm_component parent);
 	extern void function build_phase(uvm_phase phase);
 	extern task run_phase(uvm_phase phase);
-	extern task ;
-	
+
 endclass : reg_monitor
 `endif : REG_MONITOR_SV
 
@@ -41,6 +40,7 @@ function reg_monitor :: build_phase(uvm_phase phase);
 		`uvm_fatal("REG_MONITOR","vif is null in the reg_monitor")
 endfunction 
 
+
 task reg_monitor :: run_phase(uvm_phase phase)
 	`uvm_info("REG_MONITOR","RUN_PHASE of the reg_monitor Started")
 	
@@ -55,24 +55,25 @@ task reg_monitor :: run_phase(uvm_phase phase)
 					begin
 						reg_transaction t = reg_transaction::type_id::create("t");
 						
+						t.addr = vif.wb_cb.wb_adr_i;
+						t.success = 1'b1;
+						
 						// write Operation 
 						if(vif.wb_cb.wb_we_i)
 							begin 
 								t.kind = REG_WRITE;
-								t.addr = vif.wb_cb.wb_adr_i;
 								t.wdata = vif.wb_cb.wb_dat_i;
 							end 
-						else 
+						else // Read operation 
 							begin 
 								t.kind = REG_READ;
-								t.addr = vif.wb_cb.wb_adr_i;
 								t.rdata = vif.wb_cb.wb_dat_o;
 							end 
 							
-							t.success = 1'b1;
+							
 							ap.write(t);
 					end 
-			`else // LEGACY MODE 
+			`else // ------ LEGACY MODE ------
 				@(posedge vif.lg_cb.clk_i);
 					
 				// Write detected when write HIGH and Chip select HIGH 
@@ -87,6 +88,7 @@ task reg_monitor :: run_phase(uvm_phase phase)
 						t.success = 1'b1;
 						ap.write(t);
 					end 
+					
 				// Read detected when RD is HIGH and Chip Select ACTIVE 
 				if (vif.lg_cb.cs_can_i && vif.lg_cb.rd_i) 
 					begin
