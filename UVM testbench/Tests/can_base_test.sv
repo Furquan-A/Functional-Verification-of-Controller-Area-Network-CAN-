@@ -15,8 +15,8 @@ class reg_smoke_test extends uvm_test;
 	extern void function build_phase(uvm_phase phase);
 	extern task run_phase(uvm_phase phase);
 	
-endclass 
-`endif 
+endclass : reg_smoke_test
+`endif //
 
 function reg_smoke_test :: new (string name  = "reg_smoke_test", uvm_component parent)l
 	super.new(name,parent);
@@ -58,4 +58,23 @@ task reg_smoke_test :: run_phase(uvm_phase phase);
 	// ----------------------------------------------------------------------
 	// BASIC WRITE TEST 
 	// ----------------------------------------------------------------------
+	reg_write_seq wr = reg_write_seq::type_id::create("wr_seq");
+	
+	wr.addr = `CAN_MODE_REG; // writing mode register 
+	wr.data = 8'h01; // example value 
+	wr.start(m_env.r_agent[0].rseqrh); // start on reg sequencer 
+	
+	// ----------------------------------------------------------------------
+	// BASIC READ TEST 
+	// ----------------------------------------------------------------------
+	reg_read_seq rd = reg_read_seq :: type_id::create("rd_seq");
+	
+	rd.addr = `CAN_REG_MODE;
+	rd.start(m_env.r_agent[0].rseqrh);
+	
+	`uvm_info("REG_SMOKE_TEST",$sformatf("Read MODE register returned = 0x%02h", rd.data_out),UVM_MEDIUM)
+	
+	phase.drop_objection(this);
+endtask 
+
 	
