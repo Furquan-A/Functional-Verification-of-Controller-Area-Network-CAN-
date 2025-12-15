@@ -31,7 +31,7 @@ endfunction
 function reg_monitor :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
-	if(!uvm_config_db#(reg_agent_config)::get(this,"","reg_agent_config","r_cfg"))
+	if(!uvm_config_db#(reg_agent_config)::get(this,"","m_cfg",r_cfg))
 		uvm_fatal("REG_MONITOR","reg_agent_config not found in the config db. did you set it ?")
 	
 	// get VIF from the config 
