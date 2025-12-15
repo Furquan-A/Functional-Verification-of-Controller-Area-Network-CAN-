@@ -36,7 +36,7 @@ endfunction
 function void reg_driver :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 		
-	if(!uvm_config_db#(reg_agent_config) :: get(this,"reg_agent_config",r_cfg)
+	if(!uvm_config_db#(reg_agent_config) :: get(this,"m_cfg",r_cfg)
 		`uvm_fatal("DRIVER config ","cannot get the CONFIG from db. did you set it ?")
 		
 	// sanity check config 
