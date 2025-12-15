@@ -16,11 +16,15 @@ class reg_smoke_test extends uvm_test;
 	extern task run_phase(uvm_phase phase);
 	
 endclass : reg_smoke_test
-`endif //
+`endif //REG_SMOKE_TEST_SV
+
+// ====================== new ==============================================================
 
 function reg_smoke_test :: new (string name  = "reg_smoke_test", uvm_component parent)l
 	super.new(name,parent);
 endfunction 
+
+// ======================= build_phase =======================================================
 
 function reg_smoke_test :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
@@ -47,6 +51,8 @@ function reg_smoke_test :: build_phase(uvm_phase phase);
 	// set the config for env 
 	uvm_config_db #(can_env_config)::set(this,"m_env","can_env_config",cfg);
 endfunction 
+
+// ===================== run_phase ============================================================
 
 task reg_smoke_test :: run_phase(uvm_phase phase);
 	super.run_phase(phase);
