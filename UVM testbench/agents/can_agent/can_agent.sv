@@ -37,7 +37,7 @@ function void can_agent :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
 	if(!uvm_config_db#(can_agent_config)::get(this,"","m_cfg",c_cfg))
-		`uvm_fatal("CAN AGENT CONFIG","Cannot get() the in_cfg from the config_db. did you set() it ?")
+		`uvm_fatal("CAN_AGENT","Cannot get() the in_cfg from the config_db. did you set() it ?")
 		
 	// Make cfg available to all children before create()
     uvm_config_db#(can_agent_config)::set(this, "*", "m_cfg", c_cfg);
@@ -45,11 +45,14 @@ function void can_agent :: build_phase(uvm_phase phase);
 	// create Moitor which is always Present in the active or passive agent 
 	monh = can_monitor::type_id::create("monh",this);
 	
+	// check is the m_cfg is present and then create the driver and the sequencer 
 	if(c_cfg.is_active == UVM_ACTIVE)
 		begin 
 			drvh = can_driver::type_id::create("drvh",this);
 			seqrh = can_sequencer::type_id::create("seqrh",this);
 		end 
+	
+	`uvm_info("CAN_AGENT",$sformatf("Built can_agent in %s mode with %s bus",m_cfg.active.name(),m_cfg.bus_type.name()),UVM_MEDIUM)
 endfunction : build_phase
 
 // ============================ connect_phase ==============================================
