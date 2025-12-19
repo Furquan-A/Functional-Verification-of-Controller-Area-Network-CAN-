@@ -54,3 +54,15 @@ class can_agent_config extends uvm_object;
 	bit inject_form_error = 1'b1;
 	bit inject_ack_error = 1'b0;
 	
+	
+	// ---------------------------------------------------------
+	// DEBUG / TRACE 
+	// ---------------------------------------------------------
+	
+	// print TX?RX activity 
+	bit trace_enable = 1'b0;
+	
+	// verbose bit-level tracing ( very noisy)
+	bit bit_trace_encable = 1'b0;
+	
+	
