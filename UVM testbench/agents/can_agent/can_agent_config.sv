@@ -27,4 +27,30 @@ class can_agent_config extends uvm_object;
 	int unsigned bit_time_ns = 100;
 	
 	// optional Sample point ( percentage of the bit time ) 
-	int unsigned 
+	// eg. 75 means sample at 75% of bit . 
+	int unsigned sample_point_pct = 75;
+	
+	// ----------------------------------------------------------
+	// BUS_BEHAVIOR_CONTROL
+	// ----------------------------------------------------------
+	
+	// whether this node transmits ACK
+	bit ack_enable = 1'b1;
+	
+	// whether this node participate in the arbitration 
+	bit arbitration_enable = 1'b1;
+	
+	
+	// ----------------------------------------------------------
+	// ERROR_INJECTION CONTROL
+	// ----------------------------------------------------------
+	
+	// enable any error injection 
+	bit enable_error_injection = 1'b1;
+	
+	// fine grain error types 
+	bit inject_crc_error = 1'b0;
+	bit inject_stuff_error = 1'b0;;
+	bit inject_form_error = 1'b1;
+	bit inject_ack_error = 1'b0;
+	
