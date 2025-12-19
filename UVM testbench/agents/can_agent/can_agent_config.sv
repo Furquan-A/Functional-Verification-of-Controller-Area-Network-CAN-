@@ -19,6 +19,9 @@ class can_agent_config extends uvm_object;
 	// logic node identifier 
 	int unsigned node_id = 0;
 	
+	int unsigned wr_cnt = 0;
+	int unsigned rd_cnt = 0;
+	
 	// ----------------------------------------------------------------------------
 	// BIT TIMING 
 	// ---------------------------------------------------------------------------
@@ -65,4 +68,55 @@ class can_agent_config extends uvm_object;
 	// verbose bit-level tracing ( very noisy)
 	bit bit_trace_encable = 1'b0;
 	
+	// ===== Contructor ======================================
 	
+	function new(string name = "can_agent_config");
+		super.new(name);
+	endfunction 
+	
+	// =========================================================
+	// VALIDATION FUNCTION (IMPORTANT IN TYPE-B)
+	// =========================================================
+	function bit validate(ref string reason);
+		bit ok = 1;
+
+		if (vif == null) begin
+		  reason = "vif is null in can_agent_config";
+		  ok = 0;
+		end
+		else if (bit_time_ns == 0) begin
+		  reason = "bit_time_ns must be > 0";
+		  ok = 0;
+		end
+		else if (sample_point_pct > 100) begin
+		  reason = "sample_point_pct must be between 0 and 100";
+		  ok = 0;
+		end
+		else if (enable_error_injection &&
+				!(inject_crc_error || inject_stuff_error ||
+				  inject_form_error || inject_ack_error)) begin
+		  reason = "enable_error_injection set but no error type selected";
+		  ok = 0;
+		end
+
+		return ok;
+	endfunction
+	
+	// =========================================================
+	// STRINGIFY (FOR DEBUG PRINTS)
+	// =========================================================
+	function string sprint();
+		return $sformatf(
+		  "can_cfg(node=%0d, active=%s, bit_time=%0dns, ack=%0b, arb=%0b, err_inj=%0b)",
+		  node_id,
+		  (is_active == UVM_ACTIVE) ? "ACTIVE" : "PASSIVE",
+		  bit_time_ns,
+		  ack_enable,
+		  arbitration_enable,
+		  enable_error_injection
+		);
+	endfunction
+
+endclass : can_agent_config
+
+`endif // CAN_AGENT_CONFIG_SV
