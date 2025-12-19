@@ -16,7 +16,7 @@ class can_agent extends uvm_agent;
 	can_sequencer seqrh;
 	can_agent_config c_cfg;
 	
-	uvm_analysis_port #(can_item) ap;
+	uvm_analysis_port #(can_txn) ap;
 	
 	extern function new(string name = "can_agent", uvm_component parent);
 	extern function void build_phase(uvm_phase phase);
@@ -41,7 +41,8 @@ function void can_agent :: build_phase(uvm_phase phase);
 		
 	// Make cfg available to all children before create()
     uvm_config_db#(can_agent_config)::set(this, "*", "m_cfg", c_cfg);
-		
+	
+	// create Moitor which is always Present in the active or passive agent 
 	monh = can_monitor::type_id::create("monh",this);
 	
 	if(c_cfg.is_active == UVM_ACTIVE)

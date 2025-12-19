@@ -1,4 +1,4 @@
-can_uvm_testbench/
+UVM testbench 
 │
 ├── 📄 Makefile                       # ✅ Top-level build automation
 ├── 📄 can_top_tb.sv                  # ✅ DONE - Top-level testbench
@@ -14,10 +14,10 @@ can_uvm_testbench/
 ├── 📁 src/
 │   ├── 📄 can_pkg.sv                 # 🔥 START HERE - UVM package
 │   ├── 📄 can_defines.sv             # Register addresses & bit definitions
-│   ├── 📄 can_utils.sv               # Utility functions
-│   ├── 📄 can_config.sv              # Configuration objects
 │   ├── 📄 can_transaction.sv         # Transaction classes
-│   └── 📄 can_register_map.sv        # CAN controller register map
+│   |--- reg_txn.sv
+│  
+│  
 │
 ├── 📁 agents/
 │   ├── 📁 reg_agent/                 # Register access agent
@@ -31,12 +31,15 @@ can_uvm_testbench/
 │       ├── 📄 can_bus_driver.sv      # CAN frame driver
 │       ├── 📄 can_bus_monitor.sv     # CAN bus monitor
 │       └── 📄 can_bus_sequencer.sv   # CAN sequencer
-│
+│		|-- reg_agent_config.sv
+|	|--reg_transaction.sv
+|       |--reg_sequence.sv
+|
 ├── 📁 env/
 │   ├── 📄 can_env.sv                 # UVM environment (builds all agents)
 │   ├── 📄 can_virtual_sequencer.sv   # Coordinates reg + CAN sequencers
 │   ├── 📄 can_scoreboard.sv          # Functional checking
-│   └── 📄 can_coverage.sv            # Functional coverage collection
+│   └── 📄 can_env_config.sv           # Functional coverage collection
 │
 ├── 📁 sequences/
 │   ├── 📄 can_base_seq.sv            # Base sequence classes

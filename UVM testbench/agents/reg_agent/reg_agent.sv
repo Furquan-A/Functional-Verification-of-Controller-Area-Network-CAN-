@@ -1,6 +1,9 @@
 `ifndef REG_AGENT_SV
 `define REG_AGENT_SV
 
+`include "uvm_macros_svh"
+import uvm_pkg::*
+
 class reg_agent extends uvm_agent;
 	`uvm_component_utils(reg_agent);
 
@@ -20,7 +23,7 @@ class reg_agent extends uvm_agent;
 	`uvm_field_object(m_cfg, UVM_DEFAULT)
 	`uvm_component_utils_end
   
- // ================================== new =================================================
+// ================================== new =================================================
  
 function new (string name = "reg_agent", uvm_component parent);
 	super.new(name,parent);
@@ -55,6 +58,7 @@ function void build_phase(uvm_phase phase);
 endfunction : build_phase 
 
 // ============================== connect_phase ==============================================
+
 function void connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
 

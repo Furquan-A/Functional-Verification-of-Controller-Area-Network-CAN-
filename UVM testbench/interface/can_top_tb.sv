@@ -73,7 +73,7 @@ module can_top_tb;
     // If your agents use modports, you can also set those here specifically.
     // Generic handle works too if your components declare "virtual can_if".
     uvm_config_db#(virtual can_if)::set(null, "*", "vif", vif);
-    run_test();
+    run_test("reg_smoke_test");
   end
 
   // -------- Optional Waves ---------------
