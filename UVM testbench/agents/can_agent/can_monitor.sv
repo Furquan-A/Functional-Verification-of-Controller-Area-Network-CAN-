@@ -228,6 +228,7 @@ class can_monitor extends uvm_monitor;
 	bit ide;
 	
 	sid = '0;
+	
 	// 11 bit standard Id ( MSB first on the wire )
 	for (int i = 10; i >=0 ; i--)
 		begin 
@@ -236,5 +237,28 @@ class can_monitor extends uvm_monitor;
 			sid[i] = b;
 		end 
 		
-		
+	// RTR 
+	get_logical_bit(rtr);
+	if(state == ST_IDLE) return ;
+	
+	// IDE ( must be zero for Std CAN 
+	get_logical_bit(ide);
+	if(state == ST_IDLE) return ;
+	
+	// Store into transaction 	
+	tr.can_fmt = (ide == 1'b0) ? `CAN_ID_STD : `CAN_ID_EXT;
+	tr.id = { 18'd0,sid};
+	tr.f_type = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+	
+	if(ide == 1'b1) 	
+		begin 
+			// Extended decode will come later; for now we stop here gracefully.
+			`uvm_warning("CAN_MON", "Extended frame detected but EXT decode not implemented yet. Ending frame.")
+			state = ST_EOF;
+		end 
+	else 
+		begin
+		  state = ST_CTRL;
+		end
+  endtask
 			
