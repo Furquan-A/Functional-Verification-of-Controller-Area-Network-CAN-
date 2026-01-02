@@ -38,7 +38,7 @@ class can_monitor extends uvm_monitor;
 	// stuff bit tracing (applies across most states once enabled)
 	bit last_bit;
 	int unsigned same_cnt; // how many consecutive identical bits are seen 
-	bit stuff_expected; // when 1, next sampled bit is a stiff bit and must be skipped
+	bit stuff_expected; // when 1, next sampled bit is a stuff bit and must be skipped
 	// Pre computed timing 
 	time bit_time; // in simulation time unt  9e.g., ns)
 	time sp_offset; // sample_point offset within bit_time 
@@ -100,12 +100,12 @@ class can_monitor extends uvm_monitor;
 							state = ST_SOF;
 						end 
 					
-					// SOF : Confirm first bit is Dominant and move on 
+					// SOF :sample and validate 
 					ST_SOF : 
 						begin 
 							// for now sample one bit and validate it is 0
 							bit b;
-							sample_bit(b);
+							sample_raw_bit(b);
 							if(b != 1'b0) 
 								begin 
 									`uvm_warning("CAN_MON","SOF was not dominant; re-syncing to IDLE")
@@ -113,26 +113,28 @@ class can_monitor extends uvm_monitor;
 								end 
 							else 
 								begin 
-									// version 1: jump to arbitration decode next 
-									reset_stuff_tracking(b);
+									// SOF is real bit ( not stuffed ) . Initialize logical stream tracking 
+									init_logical_stream(b);
 									state = ST_ARB;
 									bit_idx = 0;
 								end 
 						end 
-					// ARBITRATION (stub)
+						
+					// ARBITRATION : Standard decode --> 11 bit ID + RTR + IDE 
 					ST_ARB : 
 						begin 
-							// TODO (next step):
-							//  - sample 11 ID bits (de-stuffed)
-							//  - sample RTR, IDE
-							//  - decide std/ext, frame_type
-							//
-							// For skeleton, we’ll just consume a few bits then end (placeholder).
-							// Replace this block with real decoding in next iteration.
-							consume_n_bits(14); // placeholder: 11+RTR+IDE+1(r0)
-							state = ST_EOF;     // placeholder
+							decode_arbitration_std();
+							// if the decode is sucessfull, we go to CNTRL; otherwise resync to IDLE inside
 						end
-						
+						 // -------------------------
+							// CTRL/DATA/CRC/ACK/EOF will be implemented next steps
+							// For now, after ARB we’ll just end frame to keep compiling
+							// -------------------------
+							
+					ST_CTRL: 
+						begin 
+							// placeholder unitl next steps
+							state = ST_EOF;
 					// EOF (stub): end frame and publish
 					ST_EOF : 
 						begin 
@@ -150,64 +152,56 @@ class can_monitor extends uvm_monitor;
 			end 
 	endtask 
 
-	// =============== helper TASK/Functons (skeleton) ======================================================
-
-	task wait_for_sof();
-		// ensure we're in idle recessive 
-		wait(vif.rx_i == 1'b1);
-		// sof when bus becomes dominant 
-		@(posedge vif.clk_i); // just to avoid zero time loop 
-		wait(vif.rx_i == 1'b0);
-	endtask
-
-	task start_new_frame();
-		tr = can_transactions :: type_id :: create("tr",this);
-		
-		tr.t_start = $time ;
-		bit_idx = 0;
-		byte_idx = 0;
-		cur_byte = 8'h00;
-		// default assumptions for now 
-		tr.can_fmt = `CAN_ID_STD;
-		tr.f_type = `CAN_DATA_FRAME;
-		tr.id = '0;
-		tr.dlc = 3'b000;
-		tr.data = new[0];
-	endtask 
-
-	task end_frame_and_publish();
-		tr.t_end = $time ;
-		ap.write(tr);
-		`uvm_info("CAN_MON", $sformatf("Observed frame: %s", tr.convert2string()), UVM_LOW)
-	endtask
-
-
-	  // Sample one CAN bit at the configured sample point.
-	  // NOTE: In a more accurate model, you align to bit boundaries; for now we
-	  // sample relative to clk_i and then wait the sample offset.
-	  
-	task sample_bit(output bit b);
-		// allign to some referance edge( sample start )
+	
+	// =================================================================================================================
+	// BIT ENGINE ( raw sampling + logical de-stuffing )
+	// =================================================================================================================
+	
+	// Raw bit sampling: sample rx+i at the sonfigured sample point of each bit time 
+	task sample_raw_bit(output bit b);
+		// allign to some clock edge for the repeatable timing; then at sp_offset 
 		@(posedge vif.clk_i);
 		#(sp_offset);
 		b = vif.rx_i;
-		// advance to next bit boundary 
 		#(bit_time - sp_offset);
 	endtask 
 	
-	function void reset_stuff_tracking( bit first_bit);
-		last_bit = first_bit;
+	// Initialize the logical Stream tracking ( call at SOF ) 
+	function void init_logical_stream(bit first_bit);
+		last_logical_bit = first_bit;
 		same_cnt = 1;
+		stuff_expected = 0;
 	endfunction 
 	
-	 // Consume N raw sampled bits (placeholder until real decoding)
-    task consume_n_bits(int unsigned n);
-		bit b;
-		repeat (n)
-			begin
-				sample_bit(b);
-			end
-	endtask
-
-endclass : can_monitor
-`endif // CAN_MONITOR_SV
+	// Get next logical bit (de-stuffed), this will sample raw bits untill non_stuff bit is obtained 
+	// update stuffing counters based on logical bits only 
+	task get_logical_bit(output bit lb);
+	bit rb;
+	
+	forever 
+		begin 
+			// if we are expecting a stuff bit we must SKIP it ( do not return it ) 
+			if (stuff_expected) 
+				begin 
+					// stuff bit must be opposite of the last logical bit, if not, its a stuff error ( later ) 
+					// for now we just warn and resync.
+					if(rb == last_logical_bit)
+						begin 
+							`uvm_warning("CAN_MON","Stuff error suspected ( stuff bit same as preious logic bit )")
+							state = ST_IDLE;
+						return ;
+					end 
+					// Skip the stuff bit and clear expectation 
+					stuff_expected = 0;
+					// continue loop to fetch next logical bit 
+					continue;
+				end 
+				
+				lb = rb // this logic bit is the real logic bit 
+				
+				if(lb == last_logical_bit)
+					same_cnt++;
+				else 
+					same_cnt = 1;
+					
+					
