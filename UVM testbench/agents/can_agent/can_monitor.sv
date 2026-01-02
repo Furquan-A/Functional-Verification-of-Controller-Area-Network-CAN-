@@ -45,11 +45,29 @@ class can_monitor extends uvm_monitor;
 	time sp_offset; // sample_point offset within bit_time 
 	
 	
-	
-	
 	extern function new (string name = "can_monitor", uvm_component parent);
 	extern function void build_phase(uvm_phase phase);
 	extern task run_phas(uvm_phase phase);
 	
 endclass : can_monitor
 `endif : CAN_MONITOR_SV
+
+// =========== CONSTRUCTOR =======================================================================
+
+function can_monitor :: new (string name = "can_monitor", uvm_component parent);
+	super.new(name,parent);
+endfunction 
+
+// =========== BUILD_PHASE : get config + vif ===================================================
+
+function void can_monitor :: build_phase(uvm_phase phase);
+	super.build_phase(phase);
+	
+	if(!uvm_config_db #(can_agent_config) :: get(this,""."m_cfg",m_cfg)
+		`uvm_fatal("CAN_MON","can_agent_config not found ( key = 'm_cfg')")
+	
+	if(!uvm_config_db #(virtual can_if) :: get(this,""."vif",vif))
+		`uvm_fatal("CAN_MON","virtual Interface can_if not found ( key = 'vif')")
+		
+	// cache timing in time units 
+	bit_time = m_cfg.bit_time_ns * 1ns;
