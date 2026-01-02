@@ -33,13 +33,12 @@ class can_monitor extends uvm_monitor;
 	
 	int unsigned bit_idx; // counts legal (de-stuffed) bits in the field 
 	int unsigned byte_idx; // data byte index
-	
 	bit [7:0] cur_byte;// assembling current byte 
 	
 	// stuff bit tracing (applies across most states once enabled)
 	bit last_bit;
 	int unsigned same_cnt; // how many consecutive identical bits are seen 
-	
+	bit stuff_expected; // when 1, next sampled bit is a stiff bit and must be skipped
 	// Pre computed timing 
 	time bit_time; // in simulation time unt  9e.g., ns)
 	time sp_offset; // sample_point offset within bit_time 
@@ -50,6 +49,7 @@ class can_monitor extends uvm_monitor;
 
 	function new (string name = "can_monitor", uvm_component parent);
 		super.new(name,parent);
+		ap = new("ap",this);
 	endfunction 
 
 	// =========== BUILD_PHASE : get config + vif ===================================================
@@ -67,13 +67,19 @@ class can_monitor extends uvm_monitor;
 		bit_time = m_cfg.bit_time_ns * 1ns;
 		sp_offset = (m_cfg.bit_time_ns * m_cfg.sample_point_pct * 1ns) / 100;
 		
-		
+		/*
 		state = ST_IDLE;
 		bit_idx = 0;
 		byte_idx = 0;
 		cur_byte = 8'h00;
 		last_bit = 1'b1; // bus idle is resessive 
+		same_cnt = 0;*/
+		
+		// Initialize stuff tracking to Idle Bus ( recessive )
+		last_logical_bit = 1'b1;
 		same_cnt = 0;
+		stuff_expected = 0;
+		
 		
 		`uvm_info("CAN_MON",$sformatf("Monitor ready: bit_time = %0t, sample_point = %0t (%0d%%)", bit_time,sp_offset,m_cfg.sample_point_pct),UVM_LOW)
 	endfunction 
@@ -99,6 +105,7 @@ class can_monitor extends uvm_monitor;
 						begin 
 							// for now sample one bit and validate it is 0
 							bit b;
+							sample_bit(b);
 							if(b != 1'b0) 
 								begin 
 									`uvm_warning("CAN_MON","SOF was not dominant; re-syncing to IDLE")
