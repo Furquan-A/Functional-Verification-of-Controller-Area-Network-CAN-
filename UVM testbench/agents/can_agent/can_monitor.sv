@@ -180,6 +180,7 @@ class can_monitor extends uvm_monitor;
 	
 	forever 
 		begin 
+			sample_raw_bit(rb);
 			// if we are expecting a stuff bit we must SKIP it ( do not return it ) 
 			if (stuff_expected) 
 				begin 
@@ -203,5 +204,17 @@ class can_monitor extends uvm_monitor;
 					same_cnt++;
 				else 
 					same_cnt = 1;
+					
+				last_logical_bit = lb;
+				
+				// after 5 consecutive identical logivc bits, next raw bit must be a stuff bit 
+				if (same_cnt == 5)
+					begin 
+						stuff_expected = 1;
+						same_cnt = 0;
+					end 
+			return;
+		end 
+endtask 				
 					
 					
