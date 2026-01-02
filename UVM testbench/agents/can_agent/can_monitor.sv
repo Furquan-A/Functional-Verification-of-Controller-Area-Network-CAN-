@@ -47,7 +47,7 @@ class can_monitor extends uvm_monitor;
 	
 	extern function new (string name = "can_monitor", uvm_component parent);
 	extern function void build_phase(uvm_phase phase);
-	extern task run_phas(uvm_phase phase);
+	extern task run_phase(uvm_phase phase);
 	
 endclass : can_monitor
 `endif : CAN_MONITOR_SV
@@ -71,3 +71,51 @@ function void can_monitor :: build_phase(uvm_phase phase);
 		
 	// cache timing in time units 
 	bit_time = m_cfg.bit_time_ns * 1ns;
+	sp_offset = (m_cfg.bit_time_ns * m_cfg.sample_point_pct * 1ns) / 100;
+	
+	
+	state = ST_IDLE;
+	bit_idx = 0;
+	byte_idx = 0;
+	cur_byte = 8'h00;
+	last_bit = 1'b1; // bus idle is resessive 
+	same_cnt = 0;
+	
+	`uvm_info("CAN_MON",$sformatf("Monitor ready: bit_time = %0t, sample_point = %0t (%0d%%)", bit_time,sp_offset,m_cfg.sample_point_pct),UVM_LOW)
+endfunction 
+
+// =================== RUN_PHASE ( main MoNITOR LOOP SKELTON ) ====================================
+
+task can_monitor :: run_phase(uvm_phase phase);
+	super.run_phase(phase);
+	
+	forever 
+		begin 
+			case(state)
+				// IDLE : Wait for SOF ( 1-> 0) 
+				ST_IDLE :
+					begin 
+						wait_for_sof();
+						start_new_frame();
+						state = ST_SOF;
+					end 
+				
+				// SOF : Confirm first bit is Dominant and move on 
+				ST_SOF : 
+					begin 
+						// for now sample one bit and validate it is 0
+						bit b;
+						if(b != 1'b0) 
+							begin 
+								`uvm_warning("CAN_MON","SOF was not dominant; re-syncing to IDLE")
+								state = ST_IDLE;
+							end 
+						else 
+							begin 
+								// version 1: jump to arbitration decode next 
+								reset_stuff_tracking(b);
+								state = ST_ARB;
+								bit_idx = 0;
+							end 
+					end 
+					
