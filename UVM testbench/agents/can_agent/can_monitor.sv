@@ -176,45 +176,65 @@ class can_monitor extends uvm_monitor;
 	// Get next logical bit (de-stuffed), this will sample raw bits untill non_stuff bit is obtained 
 	// update stuffing counters based on logical bits only 
 	task get_logical_bit(output bit lb);
-	bit rb;
-	
-	forever 
-		begin 
-			sample_raw_bit(rb);
-			// if we are expecting a stuff bit we must SKIP it ( do not return it ) 
-			if (stuff_expected) 
-				begin 
-					// stuff bit must be opposite of the last logical bit, if not, its a stuff error ( later ) 
-					// for now we just warn and resync.
-					if(rb == last_logical_bit)
-						begin 
-							`uvm_warning("CAN_MON","Stuff error suspected ( stuff bit same as preious logic bit )")
-							state = ST_IDLE;
-						return ;
-					end 
-					// Skip the stuff bit and clear expectation 
-					stuff_expected = 0;
-					// continue loop to fetch next logical bit 
-					continue;
-				end 
-				
-				lb = rb // this logic bit is the real logic bit 
-				
-				if(lb == last_logical_bit)
-					same_cnt++;
-				else 
-					same_cnt = 1;
-					
-				last_logical_bit = lb;
-				
-				// after 5 consecutive identical logivc bits, next raw bit must be a stuff bit 
-				if (same_cnt == 5)
+		bit rb;
+		
+		forever 
+			begin 
+				sample_raw_bit(rb);
+				// if we are expecting a stuff bit we must SKIP it ( do not return it ) 
+				if (stuff_expected) 
 					begin 
-						stuff_expected = 1;
-						same_cnt = 0;
+						// stuff bit must be opposite of the last logical bit, if not, its a stuff error ( later ) 
+						// for now we just warn and resync.
+						if(rb == last_logical_bit)
+							begin 
+								`uvm_warning("CAN_MON","Stuff error suspected ( stuff bit same as preious logic bit )")
+								state = ST_IDLE;
+							return ;
+						end 
+						// Skip the stuff bit and clear expectation 
+						stuff_expected = 0;
+						// continue loop to fetch next logical bit 
+						continue;
 					end 
-			return;
+					
+					lb = rb // this logic bit is the real logic bit 
+					
+					if(lb == last_logical_bit)
+						same_cnt++;
+					else 
+						same_cnt = 1;
+						
+					last_logical_bit = lb;
+					
+					// after 5 consecutive identical logivc bits, next raw bit must be a stuff bit 
+					if (same_cnt == 5)
+						begin 
+							stuff_expected = 1;
+							same_cnt = 0;
+						end 
+				return;
+			end 
+	endtask 				
+					
+	// =======================================================================================================================
+	// Arbitration Decode (standard)
+	// =======================================================================================================================
+	
+	task decode_arbitration_std();
+	bit b;
+	bit [10:0] sid;
+	bit rtr;
+	bit ide;
+	
+	sid = '0;
+	// 11 bit standard Id ( MSB first on the wire )
+	for (int i = 10; i >=0 ; i--)
+		begin 
+			get_logical_bit(b);
+			if(state == ST_IDLE) return ; // sync Occured 
+			sid[i] = b;
 		end 
-endtask 				
-					
-					
+		
+		
+			
