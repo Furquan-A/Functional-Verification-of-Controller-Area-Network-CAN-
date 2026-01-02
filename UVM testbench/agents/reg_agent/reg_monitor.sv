@@ -16,7 +16,7 @@ class reg_monitor extends uvm_component;
 	
 	
 	extern function new(string name = "reg_monitor",uvm_component parent);
-	extern void function build_phase(uvm_phase phase);
+	extern function void  build_phase(uvm_phase phase);
 	extern task run_phase(uvm_phase phase);
 
 endclass : reg_monitor
