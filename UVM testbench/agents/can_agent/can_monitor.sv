@@ -118,4 +118,33 @@ task can_monitor :: run_phase(uvm_phase phase);
 								bit_idx = 0;
 							end 
 					end 
+				// ARBITRATION (stub)
+				ST_ARB : 
+					begin 
+						// TODO (next step):
+					    //  - sample 11 ID bits (de-stuffed)
+					    //  - sample RTR, IDE
+					    //  - decide std/ext, frame_type
+					    //
+					    // For skeleton, we’ll just consume a few bits then end (placeholder).
+					    // Replace this block with real decoding in next iteration.
+					    consume_n_bits(14); // placeholder: 11+RTR+IDE+1(r0)
+					    state = ST_EOF;     // placeholder
+					end
 					
+				// EOF (stub): end frame and publish
+				ST_EOF : 
+					begin 
+						 // TODO (later ) : verify 7 recessive EOF bits 
+						 end_frame_and_publish();
+						 state = ST_IDLE ;
+					end 
+					
+				default : 
+					begin 
+						`uvm_warning("CAN_MON","unknown state : returning to IDLE ")
+						state = ST_IDLE;
+					end
+			endcase 
+		end 
+endtask 
