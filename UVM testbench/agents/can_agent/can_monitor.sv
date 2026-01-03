@@ -145,7 +145,6 @@ class can_monitor extends uvm_monitor;
 						begin 
 							 // TODO (later ) : verify 7 recessive EOF bits 
 							 end_frame_and_publish();
-							 state = ST_IDLE ;
 						end 
 						
 					default : 
@@ -383,6 +382,7 @@ class can_monitor extends uvm_monitor;
 	// =========================================================================================================================
 	// DECODE CRC FIELD  ( standard Frame ) 
 	// =========================================================================================================================
+	
 	task decode_ack_field();
 		bit ack_slot;
 		bit ack_delim;
@@ -413,7 +413,33 @@ class can_monitor extends uvm_monitor;
 		state = ST_EOF;
 	endtask
 		
+	// =========================================================================================================================
+	// DECODE EOF FIELD  ( standard Frame ) 
+	// =========================================================================================================================
+	
+	task deocde_eof_frame();
+		bit b;
+		// bit [6:0] eof_bits;
 		
+		// Read 7 concecutive 7 recessive bits 
+		for (int i = 0; i < 7; i++0
+			begin 
+				get_logical_bit(b);
+				if(state== ST_IDLE) return;
+				
+				if(b !== 1'b1) 
+					begin 
+						`uvm_warning("CAN_MON",$sformatf("EOF bit %0d not recessive ( possible Form Error )"i))
+					end 
+			end 
+			
+			// End of Frame reached -> finalize transaction 
+			end_frame_and_publish();
+			
+			// return to Idle state 
+			state = ST_IDLE ;
+	endtask 
+	
     //==========================================================================================================================
 	// Frame lifecycle helpers
 	//==========================================================================================================================
