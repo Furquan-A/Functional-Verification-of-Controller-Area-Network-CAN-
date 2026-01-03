@@ -310,6 +310,38 @@ class can_monitor extends uvm_monitor;
   // =========================================================================================================================
   // DECODE DATA FIELD ( standard Frame )
   // =========================================================================================================================
+  task decode_data_field();
+	
+	bit b;
+	
+	// allocate payload array 
+	tr.data = new[tr.dlc];
+	
+	// foreach data byte 
+	foreach(byte_idx = 0 ; byte_idx < tr.dlc; byte_idx++)
+		begin 
+			cur_byte = 8'h00;
+	
+			// each byte is 8 bits, MSB first 
+			for (bit_idx = 7; bit_idx >= 0; bit_idx--)
+				begin 
+					get_logical_bit(b);
+					if(state = ST_IDLE) return ;
+					
+					cur_byte[bit_idx] = b;
+				end 
+				
+				// store reconstructed byte 
+				tr.data[byte_idx] = cur_byte;
+		end 
+		
+		// All data bytes are received move to CRC state 
+		state = ST_CRC;
+  endtask 
+  
+  // =========================================================================================================================
+  // DECODE CRC FIELD  ( standard Frame ) 
+  // =========================================================================================================================
   
   //==========================================================================================================================
   // Frame lifecycle helpers
