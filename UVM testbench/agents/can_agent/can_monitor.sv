@@ -106,7 +106,7 @@ class can_monitor extends uvm_monitor;
 							// for now sample one bit and validate it is 0
 							bit b;
 							sample_raw_bit(b);
-							if(b != 1'b0) 
+							if(b !== 1'b0) 
 								begin 
 									`uvm_warning("CAN_MON","SOF was not dominant; re-syncing to IDLE")
 									state = ST_IDLE;
@@ -281,7 +281,7 @@ class can_monitor extends uvm_monitor;
 		if(state == ST_IDLE) return 
 		
 		// optional check ( later can be form error )
-		if(r0 != 1'b0)	
+		if(r0 !== 1'b0)	
 			begin 
 				`uvm_warning("CAN_MON","r0 bit is not zero ( possible FORM ERROR )")
 			end 
@@ -372,7 +372,7 @@ class can_monitor extends uvm_monitor;
 		if(state == ST_IDLE) return;
 		
 		// check CRC Delimeter ( recessive )
-		if(b != 1'b1)
+		if(b !== 1'b1)
 			`uvm_warning("CAN_MON","CRC Delimeter not recessive (Possible Form Error)")
 		
 		// move to ACK state after reading CRC and Delimeter 
@@ -399,6 +399,20 @@ class can_monitor extends uvm_monitor;
 				`uvm_warning("CAN_MON","ACK error detected ( no dominant ack)")
 				// Later mark ACK ack error in the transaction class if desired 
 			end 
+		
+		// Read ACK Delim 
+		get_logical_bit(ack_delim);
+		if(state == ST_IDLE) return ;
+		
+		if(ack_delim !== 1'b1)
+			begin 
+				`uvm_warning("CAN_MON","ACK Delimeter not recessive ( possible form error )")
+			end 
+		
+		// Move to EOF 
+		state = ST_EOF;
+	endtask
+		
 		
     //==========================================================================================================================
 	// Frame lifecycle helpers
