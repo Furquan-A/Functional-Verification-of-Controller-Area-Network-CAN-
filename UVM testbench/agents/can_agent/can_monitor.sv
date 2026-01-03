@@ -120,22 +120,27 @@ class can_monitor extends uvm_monitor;
 								end 
 						end 
 						
-					// ARBITRATION : Standard decode --> 11 bit ID + RTR + IDE 
-					ST_ARB : 
+				 
+					ST_ARB :// ARBITRATION : Standard decode --> 11 bit ID + RTR + IDE
 						begin 
 							decode_arbitration_std();
 							// if the decode is sucessfull, we go to CNTRL; otherwise resync to IDLE inside
 						end
-						 // -------------------------
-							// CTRL/DATA/CRC/ACK/EOF will be implemented next steps
-							// For now, after ARB we’ll just end frame to keep compiling
-							// -------------------------
-							
+						 
 					ST_CTRL: 
 						begin 
 							decode_control_std();
-							state = ST_EOF;
-					// EOF (stub): end frame and publish
+				
+					ST_DATA: 	
+						begin
+							decode_data_field();
+						end
+						
+					ST_CRC: 
+						begin
+						  decode_crc_field();
+						end
+
 					ST_EOF : 
 						begin 
 							 // TODO (later ) : verify 7 recessive EOF bits 
@@ -222,156 +227,211 @@ class can_monitor extends uvm_monitor;
 	// =======================================================================================================================
 	
 	task decode_arbitration_std();
-	bit b;
-	bit [10:0] sid;
-	bit rtr;
-	bit ide;
-	
-	sid = '0;
-	
-	// 11 bit standard Id ( MSB first on the wire )
-	for (int i = 10; i >=0 ; i--)
-		begin 
-			get_logical_bit(b);
-			if(state == ST_IDLE) return ; // sync Occured 
-			sid[i] = b;
-		end 
+		bit b;
+		bit [10:0] sid;
+		bit rtr;
+		bit ide;
 		
-	// RTR 
-	get_logical_bit(rtr);
-	if(state == ST_IDLE) return ;
-	
-	// IDE ( must be zero for Std CAN 
-	get_logical_bit(ide);
-	if(state == ST_IDLE) return ;
-	
-	// Store into transaction 	
-	tr.can_fmt = (ide == 1'b0) ? `CAN_ID_STD : `CAN_ID_EXT;
-	tr.id = { 18'd0,sid};
-	tr.f_type = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
-	
-	if(ide == 1'b1) 	
-		begin 
-			// Extended decode will come later; for now we stop here gracefully.
-			`uvm_warning("CAN_MON", "Extended frame detected but EXT decode not implemented yet. Ending frame.")
-			state = ST_EOF;
-		end 
-	else 
-		begin
-		  state = ST_CTRL;
-		end
-  endtask
-  
-  // =========================================================================================================================
-  // CONTROL FIELD DECODE ( standard Frame ) 
-  // =========================================================================================================================
-  
-  task decode_control_std();
-	bit b;
-	bit r0; // reserved reg in the CAN PROTOCL
-	bit [3:0] dlc_value;
-	
-	// read ro ( reserved )
-	get_logical_bit(r0);
-	if(state == ST_IDLE) return 
-	
-	// optional check ( later can be form error )
-	if(r0 != 1'b0)	
-		begin 
-			`uvm_warning("CAN_MON","r0 bit is not zero ( possible FORM ERROR )")
-		end 
-	
-	// read DLC ( 4 bits , MSB first on the wire ) 
-	dlc_value = 4'd0;
-	for (int i = 3; i >= 0 ; i--)
-		begin 
-			get_logical_bit(b);
-			if(state == ST_IDLE) return ;
-			dlc_value[i] = b;
-		end 
+		sid = '0;
 		
-	// store into Transaction 
-	tr.dlc = dlc_value;
-	
-	// prepare for next stage 
-	bit_idx = 0;
-	byte_idx = 0;
-	cur_byte = 8'h00;
-	
-	// decide next stage 
-	if(dlc_value == 1'b0)
-		state = ST_IDLE;
-	else 
-		state = ST_DATA;
+		// 11 bit standard Id ( MSB first on the wire )
+		for (int i = 10; i >=0 ; i--)
+			begin 
+				get_logical_bit(b);
+				if(state == ST_IDLE) return ; // sync Occured 
+				sid[i] = b;
+			end 
+			
+		// RTR 
+		get_logical_bit(rtr);
+		if(state == ST_IDLE) return ;
 		
-  endtask 
+		// IDE ( must be zero for Std CAN 
+		get_logical_bit(ide);
+		if(state == ST_IDLE) return ;
+		
+		// Store into transaction 	
+		tr.can_fmt = (ide == 1'b0) ? `CAN_ID_STD : `CAN_ID_EXT;
+		tr.id = { 18'd0,sid};
+		tr.f_type = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+		
+		if(ide == 1'b1) 	
+			begin 
+				// Extended decode will come later; for now we stop here gracefully.
+				`uvm_warning("CAN_MON", "Extended frame detected but EXT decode not implemented yet. Ending frame.")
+				state = ST_EOF;
+			end 
+		else 
+			begin
+			  state = ST_CTRL;
+			end
+	endtask
+  
+    // =========================================================================================================================
+	// CONTROL FIELD DECODE ( standard Frame ) 
+	// =========================================================================================================================
+  
+	task decode_control_std();
+		bit b;
+		bit r0; // reserved reg in the CAN PROTOCL
+		bit [3:0] dlc_value;
+		
+		// read ro ( reserved )
+		get_logical_bit(r0);
+		if(state == ST_IDLE) return 
+		
+		// optional check ( later can be form error )
+		if(r0 != 1'b0)	
+			begin 
+				`uvm_warning("CAN_MON","r0 bit is not zero ( possible FORM ERROR )")
+			end 
+		
+		// read DLC ( 4 bits , MSB first on the wire ) 
+		dlc_value = 4'd0;
+		for (int i = 3; i >= 0 ; i--)
+			begin 
+				get_logical_bit(b);
+				if(state == ST_IDLE) return ;
+				dlc_value[i] = b;
+			end 
+			
+		// store into Transaction 
+		tr.dlc = dlc_value;
+		
+		// prepare for next stage 
+		bit_idx = 0;
+		byte_idx = 0;
+		cur_byte = 8'h00;
+		
+		// decide next stage 
+		if(dlc_value == 1'b0)
+			state = ST_IDLE;
+		else 
+			state = ST_DATA;
+		
+    endtask 
   
   
-  // =========================================================================================================================
-  // DECODE DATA FIELD ( standard Frame )
-  // =========================================================================================================================
-  task decode_data_field();
+    // =========================================================================================================================
+	// DECODE DATA FIELD ( standard Frame )
+	// =========================================================================================================================
+    task decode_data_field();
 	
-	bit b;
-	
-	// allocate payload array 
-	tr.data = new[tr.dlc];
-	
-	// foreach data byte 
-	foreach(byte_idx = 0 ; byte_idx < tr.dlc; byte_idx++)
-		begin 
-			cur_byte = 8'h00;
-	
-			// each byte is 8 bits, MSB first 
-			for (bit_idx = 7; bit_idx >= 0; bit_idx--)
-				begin 
-					get_logical_bit(b);
-					if(state = ST_IDLE) return ;
+		bit b;
+		
+		// allocate payload array 
+		tr.data = new[tr.dlc];
+		
+		// foreach data byte 
+		foreach(byte_idx = 0 ; byte_idx < tr.dlc; byte_idx++)
+			begin 
+				cur_byte = 8'h00;
+		
+				// each byte is 8 bits, MSB first 
+				for (bit_idx = 7; bit_idx >= 0; bit_idx--)
+					begin 
+						get_logical_bit(b);
+						if(state = ST_IDLE) return ;
+						
+						cur_byte[bit_idx] = b;
+					end 
 					
-					cur_byte[bit_idx] = b;
-				end 
-				
-				// store reconstructed byte 
-				tr.data[byte_idx] = cur_byte;
-		end 
+					// store reconstructed byte 
+					tr.data[byte_idx] = cur_byte;
+			end 
+			
+			// All data bytes are received move to CRC state 
+			state = ST_CRC;
+	endtask 
+  
+	// =========================================================================================================================
+	// DECODE CRC FIELD  ( standard Frame ) 
+	// =========================================================================================================================
+	task decode_crc_field();
+	
+		bit b;
+		bit [14:0] crc_seq; // 15 bits crc value 
+		bit crc_delimeter; // recessive (1)
 		
-		// All data bytes are received move to CRC state 
-		state = ST_CRC;
-  endtask 
+		crc_seq = 15'd0;
+		 
+		 // Read CRC value ( MSB first )
+		for(int i = 14 ; i>=0;i--)
+			begin 
+				get_logical_bit(b);
+				if(state == ST_IDLE) return ; // resync occured 
+				
+				crc_seq[i] = b;
+			end 
+			
+		// Optional strore the observed CRC in the transaction 
+		tr.crc_obs = crc_seq;
+		
+		// Read Delimeter value 
+		get_logical_bit(b);
+		if(state == ST_IDLE) return;
+		
+		// check CRC Delimeter ( recessive )
+		if(b != 1'b1)
+			`uvm_warning("CAN_MON","CRC Delimeter not recessive (Possible Form Error)")
+		
+		// move to ACK state after reading CRC and Delimeter 
+		state = ST_ACK;
+		
+	endtask 
+	
+	// =========================================================================================================================
+	// DECODE CRC FIELD  ( standard Frame ) 
+	// =========================================================================================================================
+	task decode_ack_field();
+		bit ack_slot;
+		bit ack_delim;
+		
+		// read ACK SLOT
+		get_logical_bit(ack_slot);
+		if(state == ST_IDLE) return ;
+		
+		// ACK Slot Interpretation 
+		// 0 = ack received ( at least One Node acknowledged)
+		// 1 = ack error ( no node acknowledged)
+		if(ack_slot == 1'b1)
+			begin 
+				`uvm_warning("CAN_MON","ACK error detected ( no dominant ack)")
+				// Later mark ACK ack error in the transaction class if desired 
+			end 
+		
+    //==========================================================================================================================
+	// Frame lifecycle helpers
+	//==========================================================================================================================
   
-  // =========================================================================================================================
-  // DECODE CRC FIELD  ( standard Frame ) 
-  // =========================================================================================================================
-  
-  //==========================================================================================================================
-  // Frame lifecycle helpers
-  //==========================================================================================================================
-  task wait_for_sof();
-    // Wait for idle recessive
-    wait (vif.rx_i === 1'b1);
-    // SOF begins when bus becomes dominant
-    @(posedge vif.clk_i);
-    wait (vif.rx_i === 1'b0);
-  endtask
+	task wait_for_sof();
+	
+		// Wait for idle recessive
+		wait (vif.rx_i === 1'b1);
+		// SOF begins when bus becomes dominant
+		@(posedge vif.clk_i);
+		wait (vif.rx_i === 1'b0);
+	  endtask
 
-  task start_new_frame();
-    tr = can_transaction::type_id::create("tr", this);
-    tr.t_start = $time;
+	  task start_new_frame();
+		tr = can_transaction::type_id::create("tr", this);
+		tr.t_start = $time;
 
-    // defaults
-    tr.f_type  = `CAN_DATA_FRAME;
-    tr.can_fmt = `CAN_ID_STD;
-    tr.id      = '0;
-    tr.dlc     = 0;
-    tr.data    = new[0];
-  endtask
+		// defaults
+		tr.f_type  = `CAN_DATA_FRAME;
+		tr.can_fmt = `CAN_ID_STD;
+		tr.id      = '0;
+		tr.dlc     = 0;
+		tr.data    = new[0];
+	  endtask
 
-  task end_frame_and_publish();
-    tr.t_end = $time;
-    ap.write(tr);
-    `uvm_info("CAN_MON",
-      $sformatf("Observed frame: fmt=%s id=0x%0h type=%0d dlc=%0d bytes=%0d", (tr.can_fmt==`CAN_ID_STD)?"STD":"EXT",tr.id, tr.f_type, tr.dlc, tr.data.size()), UVM_LOW)
-  endtask
+	  task end_frame_and_publish();
+		tr.t_end = $time;
+		ap.write(tr);
+		`uvm_info("CAN_MON",
+		  $sformatf("Observed frame: fmt=%s id=0x%0h type=%0d dlc=%0d bytes=%0d", (tr.can_fmt==`CAN_ID_STD)?"STD":"EXT",tr.id, tr.f_type, tr.dlc, tr.data.size()), UVM_LOW)
+		  
+	endtask
 
 endclass : can_monitor
 
