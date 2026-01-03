@@ -133,7 +133,7 @@ class can_monitor extends uvm_monitor;
 							
 					ST_CTRL: 
 						begin 
-							// placeholder unitl next steps
+							decode_control_std();
 							state = ST_EOF;
 					// EOF (stub): end frame and publish
 					ST_EOF : 
@@ -261,4 +261,38 @@ class can_monitor extends uvm_monitor;
 		  state = ST_CTRL;
 		end
   endtask
-			
+  
+  
+  //==========================================================================================================================
+  // Frame lifecycle helpers
+  //==========================================================================================================================
+  task wait_for_sof();
+    // Wait for idle recessive
+    wait (vif.rx_i === 1'b1);
+    // SOF begins when bus becomes dominant
+    @(posedge vif.clk_i);
+    wait (vif.rx_i === 1'b0);
+  endtask
+
+  task start_new_frame();
+    tr = can_transaction::type_id::create("tr", this);
+    tr.t_start = $time;
+
+    // defaults
+    tr.f_type  = `CAN_DATA_FRAME;
+    tr.can_fmt = `CAN_ID_STD;
+    tr.id      = '0;
+    tr.dlc     = 0;
+    tr.data    = new[0];
+  endtask
+
+  task end_frame_and_publish();
+    tr.t_end = $time;
+    ap.write(tr);
+    `uvm_info("CAN_MON",
+      $sformatf("Observed frame: fmt=%s id=0x%0h type=%0d dlc=%0d bytes=%0d", (tr.can_fmt==`CAN_ID_STD)?"STD":"EXT",tr.id, tr.f_type, tr.dlc, tr.data.size()), UVM_LOW)
+  endtask
+
+endclass : can_monitor
+
+`endif // CAN_MONITOR_SV
