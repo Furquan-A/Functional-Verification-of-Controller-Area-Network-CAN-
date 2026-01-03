@@ -262,6 +262,49 @@ class can_monitor extends uvm_monitor;
 		end
   endtask
   
+  // =========================================================================================================================
+  // CONTROL FIELD DECODE ( standard Frame ) 
+  // =========================================================================================================================
+  
+  task decode_control_std();
+	bit b;
+	bit r0; // reserved reg in the CAN PROTOCL
+	bit [3:0] dlc_value;
+	
+	// read ro ( reserved )
+	get_logical_bit(r0);
+	if(state == ST_IDLE) return 
+	
+	// optional check ( later can be form error )
+	if(r0 != 1'b0)	
+		begin 
+			`uvm_warning("CAN_MON","r0 bit is not zero ( possible FORM ERROR )")
+		end 
+	
+	// read DLC ( 4 bits , MSB first on the wire ) 
+	dlc_value = 4'd0;
+	for (int i = 3; i >= 0 ; i--)
+		begin 
+			get_logical_bit(b);
+			if(state == ST_IDLE) return ;
+			dlc_value[i] = b;
+		end 
+		
+	// store into Transaction 
+	tr.dlc = dlc_value;
+	
+	// prepare for next stage 
+	bit_idx = 0;
+	byte_idx = 0;
+	cur_byte = 8'h00;
+	
+	// decide next stage 
+	if(dlc_value == 1'b0)
+		state = ST_IDLE;
+	else 
+		state = ST_DATA;
+		
+  endtask 
   
   //==========================================================================================================================
   // Frame lifecycle helpers
