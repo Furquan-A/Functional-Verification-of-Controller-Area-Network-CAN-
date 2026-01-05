@@ -41,7 +41,7 @@ function void reg_driver :: build_phase(uvm_phase phase);
 		
 	// sanity check config 
 	string why;
-	if(!r_cfg.validate(why)
+	if(!r_cfg.validate(why))
 		`uvm_fatal("REG_DRIVER,"$sformaatf("Invalid reg_agent_config: %s",why)
 	
 	// Cache Virtual Interface 
