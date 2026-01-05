@@ -70,9 +70,8 @@ class can_monitor extends uvm_monitor;
     stuff_expected   = 0;
 
     `uvm_info("CAN_MON",
-      $sformatf("Monitor ready: bit_time=%0t sp_offset=%0t (%0d%%)",
-                bit_time, sp_offset, c_cfg.sample_point_pct),
-      UVM_LOW)
+      $sformatf("Monitor ready: bit_time=%0t sp_offset=%0t (%0d%%)", bit_time, sp_offset, c_cfg.sample_point_pct), UVM_LOW)
+	  
   endfunction
 
   // =================== RUN_PHASE =========================================================================
@@ -167,15 +166,18 @@ class can_monitor extends uvm_monitor;
 
       lb = rb;
 
-      if (lb == last_logical_bit) same_cnt++;
-      else                        same_cnt = 1;
+      if (lb == last_logical_bit) 
+		same_cnt++;
+      else 
+		same_cnt = 1;
 
       last_logical_bit = lb;
 
-      if (same_cnt == 5) begin
-        stuff_expected = 1;
-        same_cnt       = 0;
-      end
+      if (same_cnt == 5) 
+		  begin
+			stuff_expected = 1;
+			same_cnt       = 0;
+		  end
 
       return;
     end
@@ -283,7 +285,7 @@ class can_monitor extends uvm_monitor;
     crc_seq = 15'd0;
 
     for (int i = 14; i >= 0; i--) begin
-      get_logical_bit(b);
+      sample_raw_bit(b);
       if (state == ST_IDLE) return;
       crc_seq[i] = b;
     end
@@ -291,7 +293,7 @@ class can_monitor extends uvm_monitor;
     tr.crc_obs = crc_seq;
 
     // CRC delimiter
-    get_logical_bit(b);
+    sample_raw_bit(b);
     if (state == ST_IDLE) return;
 
     if (b !== 1'b1)
@@ -307,13 +309,13 @@ class can_monitor extends uvm_monitor;
     bit ack_slot;
     bit ack_delim;
 
-    get_logical_bit(ack_slot);
+    sample_raw_bit(ack_slot);
     if (state == ST_IDLE) return;
 
     if (ack_slot == 1'b1)
       `uvm_warning("CAN_MON","ACK error (no dominant ACK)")
 
-    get_logical_bit(ack_delim);
+    sample_raw_bit(ack_delim);
     if (state == ST_IDLE) return;
 
     if (ack_delim !== 1'b1)
@@ -331,7 +333,7 @@ class can_monitor extends uvm_monitor;
     bit b;
 
     for (int i = 0; i < 7; i++) begin
-      get_logical_bit(b);
+      sample_raw_bit(b);
       if (state == ST_IDLE) return;
 
       if (b !== 1'b1)
