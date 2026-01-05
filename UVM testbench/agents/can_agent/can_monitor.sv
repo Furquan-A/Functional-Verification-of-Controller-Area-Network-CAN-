@@ -45,6 +45,7 @@ class can_monitor extends uvm_monitor;
   time sp_offset;
 
   // =========== CONSTRUCTOR ===========================================================================
+  
   function new(string name="can_monitor", uvm_component parent=null);
     super.new(name, parent);
     ap = new("ap", this);
@@ -52,6 +53,7 @@ class can_monitor extends uvm_monitor;
   endfunction
 
   // =========== BUILD_PHASE ===========================================================================
+  
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
 
@@ -75,6 +77,7 @@ class can_monitor extends uvm_monitor;
   endfunction
 
   // =================== RUN_PHASE =========================================================================
+  
   task run_phase(uvm_phase phase);
     super.run_phase(phase);
 
@@ -136,6 +139,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // BIT ENGINE (raw sampling + logical de-stuffing)
   // =====================================================================================================
+  
   task sample_raw_bit(output bit b);
     @(posedge vif.clk_i);
     #(sp_offset);
@@ -186,6 +190,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // Arbitration Decode (standard)
   // =====================================================================================================
+  
   task decode_arbitration_std();
     bit b;
     bit [10:0] sid;
@@ -222,6 +227,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // CONTROL FIELD DECODE (standard)
   // =====================================================================================================
+  
   task decode_control_std();
     bit b;
     bit r0;
@@ -255,6 +261,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // DATA FIELD DECODE (standard)
   // =====================================================================================================
+  
   task decode_data_field();
     bit b;
 
@@ -278,6 +285,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // CRC FIELD DECODE
   // =====================================================================================================
+  
   task decode_crc_field();
     bit b;
     bit [14:0] crc_seq;
@@ -285,7 +293,7 @@ class can_monitor extends uvm_monitor;
     crc_seq = 15'd0;
 
     for (int i = 14; i >= 0; i--) begin
-      sample_raw_bit(b);
+      get_logical_bit(b);
       if (state == ST_IDLE) return;
       crc_seq[i] = b;
     end
@@ -305,6 +313,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // ACK FIELD DECODE
   // =====================================================================================================
+  
   task decode_ack_field();
     bit ack_slot;
     bit ack_delim;
@@ -329,6 +338,7 @@ class can_monitor extends uvm_monitor;
   // Note: For strict correctness, stuffing should not be applied in EOF.
   // For v1, we still use get_logical_bit; upgrade later if needed.
   // =====================================================================================================
+  
   task decode_eof_field();
     bit b;
 
@@ -347,6 +357,7 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // Frame lifecycle helpers
   // =====================================================================================================
+  
   task wait_for_sof();
     wait (vif.rx_i === 1'b1);
     @(posedge vif.clk_i);
