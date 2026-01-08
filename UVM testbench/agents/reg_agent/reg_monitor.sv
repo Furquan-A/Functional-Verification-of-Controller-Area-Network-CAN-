@@ -1,4 +1,4 @@
-`ifder REG_MONITOR_SV
+`ifndef REG_MONITOR_SV
 `defiine REG_MONITOR_SV
 
 `include "uvm_macros.svh"
@@ -20,7 +20,7 @@ class reg_monitor extends uvm_component;
 	extern task run_phase(uvm_phase phase);
 
 endclass : reg_monitor
-`endif : REG_MONITOR_SV
+`endif // REG_MONITOR_SV
 
 
 function reg_monitor :: new (string name = "reg_monitor", uvm_component parent);

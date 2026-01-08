@@ -52,9 +52,7 @@ class reg_agent_config extends uvm_object;
 
   // Optional summary
   function string sprint();
-    return $sformatf("reg_cfg: mode=%s bus=%s trace=%0d",
-                     (is_active==UVM_ACTIVE) ? "ACTIVE" : "PASSIVE",
-                     bus_name(), trace_ops);
+    return $sformatf("reg_cfg: mode=%s bus=%s trace=%0d",(is_active==UVM_ACTIVE) ? "ACTIVE" : "PASSIVE", bus_name(), trace_ops);
   endfunction
 endclass : reg_agent_config
 

@@ -16,6 +16,6 @@ class reg_sequencer extends uvm_sequencer#(reg_txn);
 			`uvm_info(get_full_name(), "Inside Build_phase", UVM)
 	endfunction 
 
-endclass 
+endclass : reg_sequencer
 
-`endif 
+`endif // REG_SEQUENCER_SV

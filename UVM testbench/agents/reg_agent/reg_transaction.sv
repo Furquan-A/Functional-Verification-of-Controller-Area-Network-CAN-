@@ -1,6 +1,6 @@
 // This is the only transaction type the reg_agent ever needs 
 
-`ifdef REG_TRANSACTION_SV
+`ifndef REG_TRANSACTION_SV
 `define REG_TRANSACTION_SV
 
 `include "uvm_macros.svh"
@@ -70,4 +70,4 @@ function void reg_transaction :: do_print(uvm_printer printer);
     printer.print_field_int("success", success, 1, UVM_BIN);
   endfunction
 	
-`endif :: REG_TRANSACTION_SV
+`endif // REG_TRANSACTION_SV

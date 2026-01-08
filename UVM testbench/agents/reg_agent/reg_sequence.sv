@@ -40,8 +40,8 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
 		is assigned to the sequence.
 	*/
 	virtual task pre_body();
-    if (!$cast(p_sequencer, m_sequencer))
-      `uvm_fatal("REG_BASE_SEQ", "Could not cast p_sequencer!");
+		if (!$cast(p_sequencer, m_sequencer))
+		  `uvm_fatal("REG_BASE_SEQ", "Could not cast p_sequencer!");
 	endtask
   
 	// ====================== Helper : write a register =======================================
@@ -84,8 +84,7 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
 	// default empty mody overrides 
 	
 	virtual task body();
-	
-	// sequence does not own any hardaware resourses so need need of getting the  config 
+	// sequence does not own any hardaware resourses so no need of getting the  config 
 		`uvm_warning("REG_BASE_SEQ", "Base sequence body() called — nothing to do.");
 	 endtask
 	
@@ -237,7 +236,7 @@ endclass : reg_init_seq
 // ====================================================================================================================================================================
 // REG_LOAD_TX_BUFFER_SEQUENCE 
 
-`ifdef REG_LOAD_TX_BUFFER_SEQUENCE_SV
+`ifndef REG_LOAD_TX_BUFFER_SEQUENCE_SV
 `define REG_LOAD_TX_BUFFER_SEQUENCE_SV
 
 `include "uvm_macros.svh"
@@ -315,7 +314,7 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 		 `uvm_info("REG_LOAD_TX_BUF","TX buffer load complete.",UVM_MEDIUM)
 	endtask : body
 endclass 
-`endif : REG_LOAD_TX_BUFFER_SEQUENCE_SV
+`endif // REG_LOAD_TX_BUFFER_SEQUENCE_SV
 
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
@@ -352,7 +351,7 @@ endclass: reg_txreq_seq
 // ====================================================================================================================================================================
 // REG_ABORT_TX_SEQ 
 
-`ifdef REG_ABORT_TX_SEQ_SV
+`ifndef REG_ABORT_TX_SEQ_SV
 `define REG_ABORT_TX_SEQ_SV
 
 `include "uvm_macros.svh"
