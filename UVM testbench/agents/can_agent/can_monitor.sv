@@ -218,7 +218,7 @@ class can_monitor extends uvm_monitor;
 			// -------- STANDARD FRAME
 			rtr  = b;
 			
-			tr.can_fmt = `CAN_STD_ID;
+			tr.can_fmt = `CAN_ID_STD;
 			tr.id = can_id; // only 0-10 has bits remaining are zeros 
 			tr.f_type = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
 			
@@ -226,20 +226,32 @@ class can_monitor extends uvm_monitor;
 		end 
 	else 
 		begin 
-		// EXTENDED FRAME 
-		// b is SRR ( must be recessive 1 always)
-		if(b !== 1'b1)
-			`uvm_warning("CAN_MON","SRR in EXT mode is not recessive (form error)")
-		
-		// get the remaining EXTENDED ID bits 
-		for(int i = 17; i >= 0 ; i--)
-			begin 
-				get_logical_bit(b);
-				if(state == ST_IDLE) return ;
-				full_id[i] = b;
-		
-	   
-		
+			// EXTENDED FRAME 
+			// b is SRR ( must be recessive 1 always)
+			if(b !== 1'b1)
+				`uvm_warning("CAN_MON","SRR in EXT mode is not recessive (form error)")
+			
+			// get the remaining EXTENDED ID bits 
+			for(int i = 17; i >= 0 ; i--)
+				begin 
+					get_logical_bit(b);
+					if(state == ST_IDLE) return ;
+					can_id[i] = b;
+				end 
+				
+			// RTR for EXTENDED FRAME 
+			get_logical_bit(b);
+			if(state == ST_IDLE) return ;
+			
+			// IDE is 1 for the extended mode always 
+			
+			tr.can_fmt = `CAN_ID_EXT;
+			tr.id = can_id ; // Full 29 bit ID 
+			tr.f_type = (rtr == 1'b1)? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+			
+			state = ST_CTRL;
+		end 
+	endtask 
 	
   
   // =====================================================================================================
