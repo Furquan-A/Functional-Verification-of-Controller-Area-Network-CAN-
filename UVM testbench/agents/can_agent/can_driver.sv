@@ -211,4 +211,45 @@ class can_driver extends uvm_driver #(can_transaction);
 			drive_logical_bit(tr.dlc[i]);
 			
 		// --------------- DATA 
+		if(tr.f_type == `CAN_DATA_FRAME) 
+			begin 
+				int nbytes = tr.data.size();
+				if(nbytes > 8) 
+					nbytes = 8; // setting the max limit 
+				
+				for ( int bi = 0 ; bi <= nbytes; bi++)
+					begin 
+						byte unsigned db = tr.data.sie();
+						for(int b = 7; b >=0 ; b--)
+							drive_logical_bit(db[b]);
+					end 
+			end 
+			
+		// --------------- CRC sequence and Delimeter 
+		for(int i = 14 ; i>=0 ;i--) 
+				drive_logical_bit(crc_seq[i]);
+			
+			// Stuffing DISABLE after the CRC sequence 
+			stuff_en = 0;
+			
+			// CRC delimeter 
+			drive_raw_bit(1'b1); // always recessive 
+			
+		// --------------- ACK slot and Delimeter 
+		// Transmitter sends recessive; receiver(s) may drive dominant in real bus.
+		// In this bring-up driver, we keep it recessive.
+		drive_raw_bit(1'b1); // ACK slot 
+		drive_raw_bit(1'b1); // ACK delimeter ( recessive) 
+			
+		// --------------- EOF ( 7 recessive bits ) 
+		repeat(7) drive_raw_bit(1'b1);
 		
+		// release bus to the recessive idle 
+		drive_bus(1'b1);
+		
+		`uvm_info("CAN_DRV", $sformatf("Sent frame: fmt=%s id=0x%0h type=%0d dlc=%0d bytes=%0d", (tr.can_fmt==`CAN_ID_STD)?"STD":"EXT", tr.id, tr.f_type, tr.dlc, tr.data.size()), UVM_LOW)
+		
+	endtask
+endclass : can_driver
+`endif // CAN_DRIVER_SV
+			
