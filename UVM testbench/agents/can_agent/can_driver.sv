@@ -132,4 +132,33 @@ class can_driver extends uvm_driver #(can_transaction);
 		repeat ( `CAN_INTERMISSION_BITS ) drive_raw_bit(1'b1);
 	endtask 
 	
+	// ================================================================================================================
+	// FRAME TRANSMIT ( SOF -> EOF ) 
+	// ================================================================================================================
 	
+	task send_frame(can_transaction tr);
+		bit [14:0] crc_seq;
+		bit [3:0] dlc_value;
+		
+		// Bring up assumptions: 
+		//Only DATA/REMOTE FRAMES for now 
+		// CRC computation later, we transmit observed / tr.crc_obs if set , otherwise 0. 
+		crc_seq = (tr.crc_obs !== `x) ? tr.crc_obs : 15'h0000;
+		
+		wait_for_idle_bus();
+		
+		// ---------------  SOF  ( dominant 0 , Not stuffed )
+		
+		stuff_en = 1'b0;
+		drive_raw_bit(1'b0); // dominant 0 always 
+		init_stuffing(1'b0);
+		
+		// enable the bit stuffing for everything upto the CRC sequence 
+		stuff_en = 1'b1;
+		
+		// --------------- ARBITRATION 
+		if(tr.can_fmt == `CAN_ID_STD) 
+			begin 
+				
+		
+		
