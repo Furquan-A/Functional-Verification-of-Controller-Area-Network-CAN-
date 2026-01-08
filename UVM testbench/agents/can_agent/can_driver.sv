@@ -157,8 +157,44 @@ class can_driver extends uvm_driver #(can_transaction);
 		stuff_en = 1'b1;
 		
 		// --------------- ARBITRATION 
+		
+		// STANDARD MODE 
 		if(tr.can_fmt == `CAN_ID_STD) 
 			begin 
+				// 11 bit ID , MSB first : id[10:0]
+				for ( int i = 10 ; i >= 0 ; i--)
+					begin 
+						drive_logical_bit(tr.id[i]);
+					end 
 				
-		
-		
+				// RTR 1 bit . if RTR = 0 --> has DATA FRAME else REMOTE FRAME 
+				drive_logical_bit((tr.f_type == `CAN_DATA_FRAME) ? 1'b1 : 1'b0);
+				
+				// IDE must be 0 for STANDARD FRAME type 
+				drive_logical_bit(1'b0);
+			end 
+			
+		// EXTENDED FRAME 
+		else 
+			begin 
+				// EXTENDED FRAME has the ID of 29 bits [28:0], CLASSIC CAN 
+				// base id[28:18] then SRR = 1, IDE = 1, ext ID[17:0], then RTR
+				for(int i = 28; i >= 18; i--)
+					drive_logical_bit(tr.id[i]); // 11 bits 
+					
+				// SRR = 1 ( replaces the RTR of the standarf frame. Only on the bus , its not of the ID)
+				drive_logical_bit(1'b1); // always Recessive 
+				
+				// IDE must be 1 for extended Frame type 
+				drive_logical_bit(1'b1);
+				
+				// extended ID[17:0] after the upper 11 bits win the arbitration 
+				for(int i = 17; i >= 0; i--)
+					drive_logical_bit(tr.id[i]) // 18 bits 
+					
+				// RTR bit 
+				drive_logical_bit((tr.f_type == `CAN_DATA_FRAME) ? 1'b1 : 1'b0);
+				
+			end 
+					
+					
