@@ -84,3 +84,52 @@ class can_driver extends uvm_driver #(can_transaction);
 	
 	endtask 
 	
+	// Drive one Physical bit time (raw, no stuffing Logic here)
+	task drive_raw_bit(bit level);
+		// put the level on the bus to drive at start of the bit time 
+		drive_bus(level);
+		
+		// hold it for full bit time ( alligh to clk for repeatability)
+		@(posedge vif.clk_i);
+		#(bit_time);
+	endtask
+	
+	// initialize the stuffng counter at SOF ( SOF itself is not stuffed)
+	function void init_stuffing(bit first_bit);
+		last_tx_bit = first_bit;
+		same_cnt = 1;
+	endfunction 
+	
+	//drive one Logic bit with the optional stuffing ( stuffing enables only in 
+	// Arbitration + Control + Data + CRC sequence )
+	task drive_logical_bit(bit lb);
+		// If stuffing enables and w e already sent 5 identical bits, insert bit 
+		if(stuff_en && (same_cnt == 5))
+			begin 
+				bit stuff_bit = ~last_tx_bit;
+				
+				// after inserting a stuff bit , reset the stuff counter for the new run 
+				same_cnt = 1;
+				last_tx_bit = lb; // will be updated again below after driving lb
+			end 
+			
+			// drive the actual Logical bit 
+			drive_raw_bit(lb);
+			
+			// update consecutive count tracking (only when stuffing is enabled matters, 
+			// but harmless to keep updated)
+			if(lb == last_tx_bit) 
+				same_cnt++;
+			
+	endtask
+	
+	// wait for idle recessive for at least intermission bits ( simple ) 
+	task wait_for_idle_bus();
+		// wait until the bus is recessive 
+		wait(vif.rx_i == 1'b1);
+		
+		// enforce intermission bits (3 recessive bits)
+		repeat ( `CAN_INTERMISSION_BITS ) drive_raw_bit(1'b1);
+	endtask 
+	
+	
