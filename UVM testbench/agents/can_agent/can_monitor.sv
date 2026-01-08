@@ -190,40 +190,58 @@ class can_monitor extends uvm_monitor;
   // =====================================================================================================
   // Arbitration Decode (standard)
   // =====================================================================================================
+  task decode_arbitration();
+	bit b;
+	bit rtr;
+	bit ide;
+	bit [28:0] can_id;
+	
+	  
+	full_id = '0;
+	  
+	// -------- BASE ID ( 11 bit ) 
+	for (int i = 10; i >= 0; i--)
+		get_logical_bit(b);
+		if(state == ST_IDLE) return ;
+		can_id[i] = b;
+	
+	// -------- RTR / SRR bit 
+	get_logical_bit(b);
+	if(state == ST_IDLE) return ;
+	
+	// IDE bit 
+	get_logical_bit(ide);
+	if(state == ST_IDLE) return ;
+	
+	if(ide == 1'b0)
+		begin 
+			// -------- STANDARD FRAME
+			rtr  = b;
+			
+			tr.can_fmt = `CAN_STD_ID;
+			tr.id = can_id; // only 0-10 has bits remaining are zeros 
+			tr.f_type = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+			
+			state = ST_CTRL;
+		end 
+	else 
+		begin 
+		// EXTENDED FRAME 
+		// b is SRR ( must be recessive 1 always)
+		if(b !== 1'b1)
+			`uvm_warning("CAN_MON","SRR in EXT mode is not recessive (form error)")
+		
+		// get the remaining EXTENDED ID bits 
+		for(int i = 17; i >= 0 ; i--)
+			begin 
+				get_logical_bit(b);
+				if(state == ST_IDLE) return ;
+				full_id[i] = b;
+		
+	   
+		
+	
   
-  task decode_arbitration_std();
-    bit b;
-    bit [10:0] sid;
-    bit rtr;
-    bit ide;
-
-    sid = '0;
-
-    for (int i = 10; i >= 0; i--) begin
-      get_logical_bit(b);
-      if (state == ST_IDLE) return;
-      sid[i] = b;
-    end
-
-    get_logical_bit(rtr);
-    if (state == ST_IDLE) return;
-
-    get_logical_bit(ide);
-    if (state == ST_IDLE) return;
-
-    tr.can_fmt = (ide == 1'b0) ? `CAN_ID_STD : `CAN_ID_EXT;
-    tr.id      = {18'd0, sid};
-    tr.f_type  = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
-
-    if (ide == 1'b1) begin
-      `uvm_warning("CAN_MON","Extended frame detected; EXT decode not implemented yet")
-      state = ST_EOF; // graceful stop
-    end
-    else begin
-      state = ST_CTRL;
-    end
-  endtask
-
   // =====================================================================================================
   // CONTROL FIELD DECODE (standard)
   // =====================================================================================================
