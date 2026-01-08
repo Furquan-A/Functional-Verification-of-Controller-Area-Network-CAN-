@@ -156,7 +156,7 @@ class can_driver extends uvm_driver #(can_transaction);
 		// enable the bit stuffing for everything upto the CRC sequence 
 		stuff_en = 1'b1;
 		
-		// --------------- ARBITRATION 
+		// --------------- ARBITRATION FIELD
 		
 		// STANDARD MODE 
 		if(tr.can_fmt == `CAN_ID_STD) 
@@ -198,3 +198,17 @@ class can_driver extends uvm_driver #(can_transaction);
 			end 
 					
 					
+		// --------------- CONTROL FIELD (classis)
+		
+		// Here in the CONTROL FIELD we will drive the ro(reserved register 
+		// and will drive the DLC bits 
+		
+		// r0 reserved bit 
+		drive_logical_bit(1'b0); // r0 = 0 for classic CAN 
+		
+		// DLC [3:0] MSB first
+		for(int i = 3; i >= 0 ; i--)
+			drive_logical_bit(tr.dlc[i]);
+			
+		// --------------- DATA 
+		
