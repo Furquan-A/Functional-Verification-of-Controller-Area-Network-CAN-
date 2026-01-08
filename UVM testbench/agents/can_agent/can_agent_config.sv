@@ -1,4 +1,4 @@
-`ifdef CAN_AGENT_CONFIG_SV
+`ifndef CAN_AGENT_CONFIG_SV
 `define CAN_AGENT_CONFIG_SV
 
 `include "uvm_macros.svh"

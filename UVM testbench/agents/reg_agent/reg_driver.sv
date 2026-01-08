@@ -1,4 +1,4 @@
-`ifdef REG_DRIVER_SV
+`ifndef REG_DRIVER_SV
 `define REG_DRIVER_SV
 
 `include "uvm_macros.svh"
@@ -24,7 +24,7 @@ class reg_driver extends uvm_driver #(reg_transaction);
 	extern task send_to_dut();
 	
 endclass : reg_driver 
-
+`endif // REG_DRIVER_SV
 // ================================== new ==============================================================
 
 function reg_driver :: new(string name = "reg_driver", uvm_component parent);
