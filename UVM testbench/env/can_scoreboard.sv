@@ -28,3 +28,10 @@ class can_scoreboard extends uvm_component;
 		exp_imp = new("exp_imp",this);
 		obs_imp = new("obs_imp",this);
 	endfunction 
+	
+	// ========================= Expected Transaction Callback ==========================================
+	
+	function void write_obs(can_transactions tr);
+		
+	
+	
