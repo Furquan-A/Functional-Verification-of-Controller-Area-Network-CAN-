@@ -21,7 +21,7 @@ class reg_driver extends uvm_driver #(reg_transaction);
 	extern function void connect_phase(uvm_phase phase);
 	extern function void start_of_elaboration_phase(uvm_phase phase);
 	extern task run_phase (uvm_phase phase);
-	extern task send_to_dut();
+	extern task send_to_dut(reg_transaction req);
 	
 endclass : reg_driver 
 `endif // REG_DRIVER_SV
@@ -43,7 +43,7 @@ function void reg_driver :: build_phase(uvm_phase phase);
 	// sanity check config 
 	
 	if(!r_cfg.validate(why))
-		`uvm_fatal("REG_DRIVER,"$sformaatf("Invalid reg_agent_config: %s",why))
+		`uvm_fatal("REG_DRIVER",$sformaatf("Invalid reg_agent_config: %s",why))
 	
 	// Cache Virtual Interface 
 	vif = r_cfg.vif;

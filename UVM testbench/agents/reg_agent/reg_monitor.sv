@@ -2,8 +2,8 @@
 `defiine REG_MONITOR_SV
 
 `include "uvm_macros.svh"
-import uvm_pkg::*;
-`include "can_defines.sv"
+//import uvm_pkg::*;
+//`include "can_defines.sv"
 
 class reg_monitor extends uvm_component;
 	`uvm_component_utils(reg_monitor)
