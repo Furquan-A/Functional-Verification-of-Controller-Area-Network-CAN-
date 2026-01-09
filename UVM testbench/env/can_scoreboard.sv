@@ -44,3 +44,53 @@ class can_scoreboard extends uvm_component;
 			`uvm_info("CAN_SB",$sformatf("Observed frame queued (ID = 0x%0h)",tr.id),UVM_LOW)
 		compare_if_ready();
 	endfunction
+	
+	// ======================== Compare when Both sides are ready =======================================
+	
+	function void compare_if_ready();
+		can_transactions exp;
+		can_transactions obs;
+		
+		if(exp_q.size() == 0 || obs_q.size() == 0)
+		return ;
+		
+		exp = exp_q.pop_front();
+		obs_q.pop_front();
+		
+		if(compare_txn(exp,obs)) 
+			begin 
+				pass_count ++ ;
+				`uvm_info("CAN_SB","CAN FRAME MATCHED ", UVM_LOW)
+			end 
+		else 
+			begin 
+				fail_count++;
+				`uvm_info("CAN_SB","CAN FRAME MISMATCH ", UVM_LOW)
+			end 
+	endfunction 
+	
+	// ======================= FIELD-BY-FIELD comaprision ================================================
+	
+	function bit compare_txn(can_transactions exp, can_transactions obs);
+		if(exp.can_fmt != obs.can_fmt) return 0;
+		if (exp.id      != obs.id)      return 0;
+		if (exp.f_type  != obs.f_type)  return 0;
+		if (exp.dlc     != obs.dlc)     return 0;
+		
+		if(exp.data.size() != obs.data.size()) return ;
+		
+		foreach(exp.data[i])
+			begin 
+				if(exp.data[i] != obs.data[i])
+				return 0;
+			end 
+	endfunction 
+	
+	// ======================= Report Phase ==============================================================
+	
+	function void report_phase(uvm_phase phase);
+		`uvm_info("CAN_SB",$sformatf("Scoreboard summary: Pass = %0d, Fail = %0d", pass_count, fail_count),UVM_LOW)
+	endfunction 
+	
+endclass : can_scoreboard
+`endif 
