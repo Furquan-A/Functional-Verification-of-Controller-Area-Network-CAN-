@@ -9,8 +9,8 @@ class env extends uvm_env;
 	can_agent c_agent[]; 
 	reg_agent r_agent[];
 	
-	can_scoarboard c_sb;
-	can_virtual_sequencer can_vseqrh;
+	can_scoreboard c_sb;
+	// can_virtual_sequencer can_vseqrh;
 	can_env_config m_cfg;
 	// can_coverage c_cvg;
 	
@@ -82,9 +82,11 @@ function void env::connect_phase(uvm_phase phase);
 	if(c_sb != null)
 		begin 
 			foreach(c_agent[i])
-				c_agent[i].ap.connect(c_sb.can_export); 
+				// Observed CAN frames → scoreboard
+				c_agent[i].mon_ap.connect(c_sb.obs_imp); 
 			foreach
-				r_agent[i].ap.connect(c_sb.reg_export);
+				// Expected CAN frames → scoreboard
+				c_agent[i].drv_ap.connect(c_sb.exp_imp);
 		end 
 		
 	if(can_vseqrh != null)

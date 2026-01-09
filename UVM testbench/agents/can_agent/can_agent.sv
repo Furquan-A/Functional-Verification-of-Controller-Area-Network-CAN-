@@ -16,7 +16,8 @@ class can_agent extends uvm_agent;
 	can_sequencer seqrh;
 	can_agent_config c_cfg;
 	
-	uvm_analysis_port #(can_txn) ap;
+	uvm_analysis_port #(can_transactions) drv_ap;
+	uvm_analysis_port #(can_transactions) mon_ap;
 	
 	extern function new(string name = "can_agent", uvm_component parent);
 	extern function void build_phase(uvm_phase phase);
@@ -60,8 +61,9 @@ endfunction : build_phase
 function void can_agent:: connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
 	
-    // Forward monitor's transactions to agent's AP
-	monh.ap.connect(ap);
+    // Forward monitor's and Driver's transactions to agent's AP
+	drvh.ap.connect(drv_ap);
+	monh.ap.connect(mon_ap);
 	
 	if(c_cfg.is_active == UVM_ACTIVE)
 		begin 
