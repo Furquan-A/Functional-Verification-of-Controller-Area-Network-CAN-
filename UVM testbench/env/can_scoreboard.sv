@@ -31,7 +31,16 @@ class can_scoreboard extends uvm_component;
 	
 	// ========================= Expected Transaction Callback ==========================================
 	
+	function void write_exp(can_transactions tr);
+		exp_q.push_back(tr);
+			`uvm_info("CAN_SB",$sformatf("Expected frame queued (ID = 0x%0h)",tr.id),UVM_LOW)
+		compare_if_ready();
+	endfunction
+	
+	// ========================= Observed Transaction Callback ==========================================
+	
 	function void write_obs(can_transactions tr);
-		
-	
-	
+		obs_q.push_back(tr);
+			`uvm_info("CAN_SB",$sformatf("Observed frame queued (ID = 0x%0h)",tr.id),UVM_LOW)
+		compare_if_ready();
+	endfunction
