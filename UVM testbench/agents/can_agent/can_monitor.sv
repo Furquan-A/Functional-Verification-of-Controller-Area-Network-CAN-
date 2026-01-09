@@ -194,16 +194,17 @@ class can_monitor extends uvm_monitor;
 	bit b;
 	bit rtr;
 	bit ide;
+	bit [10:0] base_id;
 	bit [28:0] can_id;
 	
-	  
-	full_id = '0;
+	base_id = '0;  
+	can_id = '0;
 	  
 	// -------- BASE ID ( 11 bit ) 
 	for (int i = 10; i >= 0; i--)
 		get_logical_bit(b);
 		if(state == ST_IDLE) return ;
-		can_id[i] = b;
+		base_id[i] = b;
 	
 	// -------- RTR / SRR bit 
 	get_logical_bit(b);
@@ -216,6 +217,7 @@ class can_monitor extends uvm_monitor;
 	if(ide == 1'b0)
 		begin 
 			// -------- STANDARD FRAME
+			can_id[10:0] = base_id;
 			rtr  = b;
 			
 			tr.can_fmt = `CAN_ID_STD;
@@ -231,6 +233,7 @@ class can_monitor extends uvm_monitor;
 			if(b !== 1'b1)
 				`uvm_warning("CAN_MON","SRR in EXT mode is not recessive (form error)")
 			
+			can_id[28:18] = base_id; // place base_id in the upper bits 
 			// get the remaining EXTENDED ID bits 
 			for(int i = 17; i >= 0 ; i--)
 				begin 
