@@ -24,7 +24,7 @@ class reg_driver extends uvm_driver #(reg_transaction);
 	extern task send_to_dut(reg_transaction req);
 	
 endclass : reg_driver 
-`endif // REG_DRIVER_SV
+
 // ================================== new ==============================================================
 
 function reg_driver :: new(string name = "reg_driver", uvm_component parent);
@@ -62,7 +62,7 @@ task reg_driver :: run_phase(uvm_phase phase);
 	forever
 		begin 
 			// 1. block until the seequence sends us a transaction 
-			start_item_port_get_next_item(req);
+			start_item_port.get_next_item(req);
 			
 			// call the send to dut method to perform the operations 
 			send_to_dut(req); // <-- All DUT actions are handled here 
@@ -78,7 +78,7 @@ task reg_driver :: send_to_dut(reg_transaction req);
 
 	
 	// perform the operation via interface 
-	t.t_start = $time;
+	req.t_start = $time;
 	if(req.is_write())
 		begin 
 			vif.reg_write(req.addr,req.wdata);
@@ -101,7 +101,8 @@ task reg_driver :: send_to_dut(reg_transaction req);
 				end 
 		end 
 		
-	t.t_end = $time;
+	req.t_end = $time;
 	req.success = 1'b1; // mark transaction is successful	
 endtask 
 		
+`endif // REG_DRIVER_SV

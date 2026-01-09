@@ -1,5 +1,5 @@
 `ifndef REG_MONITOR_SV
-`defiine REG_MONITOR_SV
+`define REG_MONITOR_SV
 
 `include "uvm_macros.svh"
 //import uvm_pkg::*;
@@ -20,7 +20,7 @@ class reg_monitor extends uvm_component;
 	extern task run_phase(uvm_phase phase);
 
 endclass : reg_monitor
-`endif // REG_MONITOR_SV
+
 
 
 function reg_monitor :: new (string name = "reg_monitor", uvm_component parent);
@@ -32,17 +32,20 @@ function reg_monitor :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
 	if(!uvm_config_db#(reg_agent_config)::get(this,"","m_cfg",r_cfg))
-		uvm_fatal("REG_MONITOR","reg_agent_config not found in the config db. did you set it ?")
-	
+		begin 
+			`uvm_fatal("REG_MONITOR","reg_agent_config not found in the config db. did you set it ?")
+		end 
 	// get VIF from the config 
 	vif = r_cfg.vif;
 	if(vif == null)
-		`uvm_fatal("REG_MONITOR","vif is null in the reg_monitor")
+		begin 
+			`uvm_fatal("REG_MONITOR","vif is null in the reg_monitor")
+		end
 endfunction 
 
 
-task reg_monitor :: run_phase(uvm_phase phase)
-	`uvm_info("REG_MONITOR","RUN_PHASE of the reg_monitor Started")
+task reg_monitor :: run_phase(uvm_phase phase);
+	`uvm_info("REG_MONITOR","RUN_PHASE of the reg_monitor Started",UVM_LOW)
 	
 	forever 
 		begin 
@@ -105,7 +108,7 @@ task reg_monitor :: run_phase(uvm_phase phase)
 		end 
 endtask 
 
-					
+`endif // REG_MONITOR_SV	
 				
 	
 	

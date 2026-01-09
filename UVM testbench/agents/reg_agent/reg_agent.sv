@@ -1,12 +1,11 @@
 `ifndef REG_AGENT_SV
 `define REG_AGENT_SV
 
-`include "uvm_macros_svh"
-import uvm_pkg::*
+//`include "uvm_macros_svh"
+import uvm_pkg::*;
 
 class reg_agent extends uvm_agent;
-	`uvm_component_utils(reg_agent);
-
+	
 	virtual can_if vif;
 
 	//----Agent components and their Handles--
