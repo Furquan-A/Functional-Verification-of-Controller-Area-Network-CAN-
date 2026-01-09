@@ -34,15 +34,16 @@ endfunction
 // ================================= build_phase =======================================================
 
 function void reg_driver :: build_phase(uvm_phase phase);
+	string why; // all the declarations must be before any executional statement
 	super.build_phase(phase);
 		
-	if(!uvm_config_db#(reg_agent_config) :: get(this,"m_cfg",r_cfg)
+	if(!uvm_config_db#(reg_agent_config) :: get(this,"m_cfg",r_cfg))
 		`uvm_fatal("DRIVER config ","cannot get the CONFIG from db. did you set it ?")
 		
 	// sanity check config 
-	string why;
+	
 	if(!r_cfg.validate(why))
-		`uvm_fatal("REG_DRIVER,"$sformaatf("Invalid reg_agent_config: %s",why)
+		`uvm_fatal("REG_DRIVER,"$sformaatf("Invalid reg_agent_config: %s",why))
 	
 	// Cache Virtual Interface 
 	vif = r_cfg.vif;

@@ -1,6 +1,6 @@
-class env extends uvm_env;
+class can_env extends uvm_env;
 
-	`uvm_component_utils(env)
+	`uvm_component_utils(can_env)
 	
 	virtual can_if vif; // Virtual Interface 
 	
@@ -14,7 +14,7 @@ class env extends uvm_env;
 	can_env_config m_cfg;
 	// can_coverage c_cvg;
 	
-	extern function new(string name = "env", uvm_component parent);
+	extern function new(string name = "can_env", uvm_component parent);
 	extern function void build_phase(uvm_phase phase);
 	extern function void connect_phase(uvm_phase phase);
 	
@@ -23,14 +23,14 @@ endclass
 // ========================================================================================
 // ============================ new =======================================================
 
-function env :: new (string name = "env", uvm_component parent);
+function can_env :: new (string name = "can_env", uvm_component parent);
 	super.new(name,parent);
 endfunction 
 
 // ========================================================================================
 // ============================== build_phase =============================================
 
-function void env :: build_phase (uvm_phase phase);
+function void can_env :: build_phase (uvm_phase phase);
 	super.build_phase(phase);
 	
 	if(!uvm_config_db#(can_env_config)::get(this,"","can_env_config",m_cfg))
@@ -76,7 +76,7 @@ endfunction : build_phase
 // ========================================================================================
 // ============================== connect_phase ===========================================
 
-function void env::connect_phase(uvm_phase phase);
+function void can_env::connect_phase(uvm_phase phase);
 	super.connect_phase(phase);
 	
 	if(c_sb != null)

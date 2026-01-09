@@ -31,10 +31,11 @@ class reg_agent_config extends uvm_object;
 
   // Check vif presence and optional bus expectation
   function bit validate(ref string why);
+  bit use_wb;
     if (vif == null) begin
       why = "can_if vif is null"; return 0;
     end
-    bit use_wb = vif.USE_WB;
+    use_wb = vif.USE_WB;
     if (expect_bus == REG_BUS_WB     && !use_wb) begin
       why = "Expected WISHBONE but interface is LEGACY"; return 0;
     end
