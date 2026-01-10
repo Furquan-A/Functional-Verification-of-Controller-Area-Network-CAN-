@@ -11,6 +11,8 @@
 class can_driver extends uvm_driver #(can_transaction);
 	`uvm_component_utils(can_driver)
 	
+	uvm_analysis_port #(can_transaction) ap;
+	
 	can_transaction tr;
 	can_agent_config c_cfg;
 	
@@ -34,6 +36,7 @@ class can_driver extends uvm_driver #(can_transaction);
 	// ================================ Constructor ==============================================================
 	function new (string name = "can_driver", uvm_component parent);
 		super.new(name,parent);
+		ap = new("ap",this);
 	endfunction 
 	
 	// ============================ build_phase ==================================================================

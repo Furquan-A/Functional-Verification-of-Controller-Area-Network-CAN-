@@ -29,7 +29,8 @@ endclass
 
 function can_agent :: new(string name = " can_agent", uvm_component parent);
 	super.new(name,parent);
-	ap = new("ap",this);
+	drv_ap = new("drv_ap",this);
+	mon_ap = new("mon_ap",this);
 endfunction 
 
 // ============================= build_phase ==============================================
@@ -53,7 +54,7 @@ function void can_agent :: build_phase(uvm_phase phase);
 			seqrh = can_sequencer::type_id::create("seqrh",this);
 		end 
 	
-	`uvm_info("CAN_AGENT",$sformatf("Built can_agent in %s mode with %s bus",m_cfg.active.name(),m_cfg.bus_type.name()),UVM_MEDIUM)
+	`uvm_info("CAN_AGENT",$sformatf("Built can_agent in %s mode ",m_cfg.active.name()),UVM_MEDIUM)
 endfunction : build_phase
 
 // ============================ connect_phase ==============================================
