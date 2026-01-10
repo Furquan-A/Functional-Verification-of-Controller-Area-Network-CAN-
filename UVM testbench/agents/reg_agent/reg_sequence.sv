@@ -229,7 +229,7 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 		`uvm_info("REG_INIT_SEQ","CAN controller initialization COMPLETE",UVM_MEDIUM)
 	endtask : body
 
-endclass : reg_init_seq
+endclass : reg_init_seqs
 
 `endif
 	
@@ -242,7 +242,7 @@ endclass : reg_init_seq
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_load_tx_buffer_seq extends reg_base_seq;
 	`uvm_object_utils(reg_load_tx_buffer_seq)
@@ -270,7 +270,7 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 			end 
 		if(data.size() != dlc) 
 			begin 
-				uvm_fatal("TXBUF_SEQ","data[] size does not match the DLC ")
+				`uvm_fatal("TXBUF_SEQ","data[] size does not match the DLC ")
 			end 
 			
 		// -------------------1. Write ID, Control fields into the TX buffer register -------------------
@@ -328,7 +328,7 @@ endclass
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_txreq_seq extends reg_base_seq;
 	`uvm_object_utils(reg_txreq_seq)
@@ -355,7 +355,7 @@ endclass: reg_txreq_seq
 `ifndef REG_ABORT_TX_SEQ_SV
 `define REG_ABORT_TX_SEQ_SV
 
-`include "uvm_macros.svh"
+//`include "uvm_macros.svh"
 import uvm_pkg::*;
 
 `include "can_defines.sv"
@@ -371,7 +371,7 @@ class reg_abort_tx_seq extends reg_base_seq;
 		`uvm_info("REG_ABORT_TX_SEQ","Issuing ABORT_TX command to CAN controller...",UVM_MEDIUM)
 		
 		// COMMAND register bit0 = TREQ ( CAN_CMD_TREQ_M)
-		write_reg`(CAN_COMMAND_REG,`CAN_CMD_ABORT_M);
+		write_reg(`CAN_COMMAND_REG,`CAN_CMD_ABORT_M);
 		
 		`uvm_info("REG_ABORT_TX_SEQ","ABORT_TX command sent successfully.", UVM_MEDIUM)
 	endtask 
@@ -387,7 +387,7 @@ endclass : reg_abort_tx_seq
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_release_rx_buffer_seq extends reg_base_seq;
   `uvm_object_utils(reg_release_rx_buffer_seq)
@@ -419,7 +419,7 @@ endclass : reg_release_rx_buffer_seq
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_clear_overrun_seq extends reg_base_seq;
   `uvm_object_utils(reg_clear_overrun_seq)
@@ -452,7 +452,7 @@ endclass : reg_clear_overrun_seq
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_self_rx_seq extends reg_base_seq;
   `uvm_object_utils(reg_self_rx_seq)
@@ -482,7 +482,7 @@ endclass : reg_self_rx_seq
 class reg_enable_irq_seq extends reg_base_seq;
 	`uvm_object_utils(reg_enable_irq_seq)
 	
-	rand byte irq_enable_mask = 8'bFF; // enable all by default 
+	rand byte irq_enable_mask = 8'hFF; // enable all by default 
 	
 	function new (string name = "reg_enable_irq_seq");
 		super.new(name);
