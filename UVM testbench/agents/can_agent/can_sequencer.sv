@@ -1,4 +1,4 @@
-`ifdef CAN_SEQUENCER_SV
+`ifndef CAN_SEQUENCER_SV
 `define CAN_SEQUENCER_SV
 
 `include "uvm_macros.svh"

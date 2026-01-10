@@ -398,7 +398,7 @@ class can_monitor extends uvm_monitor;
   endtask
 
   task start_new_frame();
-    tr = can_transactions::type_id::create("tr");
+    tr = can_transaction::type_id::create("tr");
     tr.t_start = $time;
 
     tr.f_type  = `CAN_DATA_FRAME;

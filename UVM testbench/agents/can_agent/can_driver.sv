@@ -41,10 +41,10 @@ class can_driver extends uvm_driver #(can_transaction);
 		super.build_phase(phase);
 		
 		if(!uvm_config_db #(can_agent_config) :: get(this,"","m_cfg",c_cfg)
-			`uvm_fatal("CAN_DRV""cannot get the CONFIG from the DB.(key='m_cfg')")
+			`uvm_fatal("CAN_DRV","cannot get the CONFIG from the DB.(key='m_cfg')")
 		
 		if(!uvm_config_db #(virtual can_if ) :: get (this,"","vif",vif))
-			`uvm_fatal("CAN_DRV"."Virtual can_if not found (key = 'vif')")         
+			`uvm_fatal("CAN_DRV","Virtual can_if not found (key = 'vif')")         
 			
 		// Cache timing 
 		bit_time = c_cfg.bit_time_ns * 1ns;
@@ -217,7 +217,7 @@ class can_driver extends uvm_driver #(can_transaction);
 				
 				// extended ID[17:0] after the upper 11 bits win the arbitration 
 				for(int i = 17; i >= 0; i--)
-					drive_frame_bit(tr.id[i]) // 18 bits 
+					drive_frame_bit(tr.id[i]); // 18 bits 
 					
 				// RTR bit 
 				drive_frame_bit((tr.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0);
@@ -247,7 +247,7 @@ class can_driver extends uvm_driver #(can_transaction);
 				for ( int bi = 0 ; bi < nbytes; bi++)
 					begin 
 						for(int b = 7; b >=0 ; b--)
-							drive_frame_bit([bi][b]);
+							drive_frame_bit(bi[b]);
 					end 
 			end 
 			

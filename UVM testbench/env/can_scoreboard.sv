@@ -9,12 +9,12 @@ class can_scoreboard extends uvm_component;
 	`uvm_component_utils(can_scoreboard)
 	
 	// analysis PORTS 
-	uvm_analysis_imp #(can_transactions,can_scoreboard) exp_imp;
-	uvm_analysis_imp #(can_transactions, can_scoreboard) obs_imp;
+	uvm_analysis_imp #(can_transaction,can_scoreboard) exp_imp;
+	uvm_analysis_imp #(can_transaction, can_scoreboard) obs_imp;
 	
 	// Queues of the expected and the observed transactions 
-	can_transactions exp_q[$];
-	can_transactions obs_q[$];
+	can_transaction exp_q[$];
+	can_transaction obs_q[$];
 	
 	// statistics 
 	int pass_count;
@@ -31,7 +31,7 @@ class can_scoreboard extends uvm_component;
 	
 	// ========================= Expected Transaction Callback ==========================================
 	
-	function void write_exp(can_transactions tr);
+	function void write_exp(can_transaction tr);
 		exp_q.push_back(tr);
 			`uvm_info("CAN_SB",$sformatf("Expected frame queued (ID = 0x%0h)",tr.id),UVM_LOW)
 		compare_if_ready();
@@ -39,7 +39,7 @@ class can_scoreboard extends uvm_component;
 	
 	// ========================= Observed Transaction Callback ==========================================
 	
-	function void write_obs(can_transactions tr);
+	function void write_obs(can_transaction tr);
 		obs_q.push_back(tr);
 			`uvm_info("CAN_SB",$sformatf("Observed frame queued (ID = 0x%0h)",tr.id),UVM_LOW)
 		compare_if_ready();
@@ -48,8 +48,8 @@ class can_scoreboard extends uvm_component;
 	// ======================== Compare when Both sides are ready =======================================
 	
 	function void compare_if_ready();
-		can_transactions exp;
-		can_transactions obs;
+		can_transaction exp;
+		can_transaction obs;
 		
 		if(exp_q.size() == 0 || obs_q.size() == 0)
 		return ;
@@ -71,7 +71,7 @@ class can_scoreboard extends uvm_component;
 	
 	// ======================= FIELD-BY-FIELD comaprision ================================================
 	
-	function bit compare_txn(can_transactions exp, can_transactions obs);
+	function bit compare_txn(can_transaction exp, can_transaction obs);
 		if(exp.can_fmt != obs.can_fmt) return 0;
 		if (exp.id      != obs.id)      return 0;
 		if (exp.f_type  != obs.f_type)  return 0;

@@ -1,4 +1,4 @@
-`ifdef CAN_TRANSACTION_SV
+`ifndef CAN_TRANSACTION_SV
 `define CAN_TRANSACTION_SV
 
 `include "uvm_macros.svh"
@@ -86,8 +86,8 @@ class can_transaction extends uvm_sequence_item;
 	
 	// -------- set payload explicitly( also update dlc + force DATA frame) --------
 	
-	function void set_payload( const ref byte unsigned byte[$]);
-		int n = byte.size();
+	function void set_payload( const ref byte unsigned nbyte[$]);
+		int n = nbyte.size();
 		
 		// Classic can max 8 bytes 
 		if(n > 8)
@@ -95,7 +95,7 @@ class can_transaction extends uvm_sequence_item;
 			
 		data = new[n];
 		foreach (data[i])
-			data[i] = byte[i];
+			data[i] = nbyte[i];
 			
 		dlc = n[3:0];
 		f_type = `CAN_DATA_FRAME;
@@ -152,4 +152,4 @@ class can_transaction extends uvm_sequence_item;
 	
 	endfunction 
 endclass 
-`endif CAN_TRANSACTION_SV
+`endif //CAN_TRANSACTION_SV
