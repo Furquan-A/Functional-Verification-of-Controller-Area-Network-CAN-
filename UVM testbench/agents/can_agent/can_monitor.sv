@@ -105,7 +105,7 @@ class can_monitor extends uvm_monitor;
         end
 
         ST_ARB: begin
-          decode_arbitration_std(); // sets next state
+          decode_arbitration(); // sets next state
         end
 
         ST_CTRL: begin
@@ -196,12 +196,13 @@ class can_monitor extends uvm_monitor;
 	bit ide;
 	bit [10:0] base_id;
 	bit [28:0] can_id;
+	int i;
 	
 	base_id = '0;  
 	can_id = '0;
 	  
 	// -------- BASE ID ( 11 bit ) 
-	for (int i = 10; i >= 0; i--)
+	for ( i = 10; i >= 0; i--)
 		get_logical_bit(b);
 		if(state == ST_IDLE) return ;
 		base_id[i] = b;
