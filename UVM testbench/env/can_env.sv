@@ -55,22 +55,22 @@ function void can_env :: build_phase (uvm_phase phase);
 					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent[%0d]*"),"m_cfg",m_cfg.r_cfg[i]);
 				end 
 		end 
-		
+		/*
 	if(m_cfg.has_can_coverage)
 		begin 
 			c_cvg = can_coverage::type_id::create("can_coverage",this);
 		end 
-	
+	*/
 	if(m_cfg.has_can_scoreboard)
 		begin 
 			c_sb = can_scoarboard::type_id::create("c_sb",this);
 		end 
-	
+	/*
 	if(m_cfg.has_virtual_sequencer)
 		begin 
 			can_vseqrh = can_virtaul_sequencer :: type_id::create("can_virtaul_sequencer",this);
 		end 
-		
+		*/
 endfunction : build_phase 
 
 // ========================================================================================
@@ -84,7 +84,7 @@ function void can_env::connect_phase(uvm_phase phase);
 			foreach(c_agent[i])
 				// Observed CAN frames → scoreboard
 				c_agent[i].mon_ap.connect(c_sb.obs_imp); 
-			foreach
+			foreach(c_agent[i])
 				// Expected CAN frames → scoreboard
 				c_agent[i].drv_ap.connect(c_sb.exp_imp);
 		end 

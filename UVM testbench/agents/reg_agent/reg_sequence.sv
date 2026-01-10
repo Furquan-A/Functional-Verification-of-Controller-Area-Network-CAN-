@@ -12,25 +12,25 @@
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_base_seq  extends uvm_sequence #(reg_transaction);
 	
-	`uvm_object_utils(reg_sequence)
+	`uvm_object_utils(reg_base_seq)
 	
 	
 	reg_agent_config r_cfg;
-	env_config env_cfg;
+	can_env_config env_cfg;
 	
 	
 	reg_sequencer p_sequencer;
 	
 	
-	interface can_if vif;
+	virtual can_if vif;
 	
 	// ============================= new ========================================================
 
-	function reg_sequence_base :: new(string name = "reg_sequence");
+	function  new(string name = "reg_base_seq");
 		super.new(name);
 	endfunction 
 	 
@@ -46,9 +46,9 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
   
 	// ====================== Helper : write a register =======================================
 	
-	task write_reg(bit [7:]0 addr, bit [7:0] data);
-		
-		reg_transaction t; = reg_transaction::type_id::create("t_write");
+	task write_reg(bit [7:0] addr, bit [7:0] data);
+		reg_transaction t;
+		t = reg_transaction::type_id::create("t_write");
 		t.kind  = REG_WRITE;
 		t.addr = addr;
 		t.wdata = data;
@@ -66,8 +66,8 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
 	// ==================== Helper: Read a register ==========================================
 	
 	task read_reg(bit [7:0] addr, output bit [7:0] data);
-		
-		reg_transaction t; = reg_transaction::type_id::create("t_read");
+		reg_transaction t
+		t = reg_transaction::type_id::create("t_read");
 		t.kind = REG_READ;
 		t.addr = addr;
 		
