@@ -5,7 +5,7 @@
 import uvm_pkg::*;
 
 class can_smoke_test extends uvm_test;
-	uvm_component_utils(can_smoke_test)
+	`uvm_component_utils(can_smoke_test)
 	
 	can_env m_env;
 	

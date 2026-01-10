@@ -10,6 +10,7 @@ class reg_driver extends uvm_driver #(reg_transaction);
 	
 	
 	reg_agent_config r_cfg;
+	reg_agent_config m_cfg;
 	
 	// virtual Interface 
 	virtual can_if vif;
@@ -18,7 +19,6 @@ class reg_driver extends uvm_driver #(reg_transaction);
 	
 	extern function new( string name = "reg_driver", uvm_component parent );
 	extern function void build_phase(uvm_phase phase);
-	extern function void connect_phase(uvm_phase phase);
 	extern function void start_of_elaboration_phase(uvm_phase phase);
 	extern task run_phase (uvm_phase phase);
 	extern task send_to_dut(reg_transaction req);
@@ -43,7 +43,7 @@ function void reg_driver :: build_phase(uvm_phase phase);
 	// sanity check config 
 	
 	if(!r_cfg.validate(why))
-		`uvm_fatal("REG_DRIVER",$sformaatf("Invalid reg_agent_config: %s",why))
+		`uvm_fatal("REG_DRIVER",$sformatf("Invalid reg_agent_config: %s",why))
 	
 	// Cache Virtual Interface 
 	vif = r_cfg.vif;
@@ -85,7 +85,7 @@ task reg_driver :: send_to_dut(reg_transaction req);
 			r_cfg.wr_cnt++;
 		if(r_cfg.trace_ops)
 			begin 
-				`uvm_info("REG_DRV",$sformatf("[%s] WR @0x%02h = 0x%02h",vif.USE_WB ? "WB" : "LEG",t.addr, t.wdata),UVM_LOW)
+				`uvm_info("REG_DRV",$sformatf("[%s] WR @0x%02h = 0x%02h",vif.USE_WB ? "WB" : "LEG",req.addr, req.wdata),UVM_LOW)
 			end
 		end
 	else 
@@ -97,7 +97,7 @@ task reg_driver :: send_to_dut(reg_transaction req);
 					
 			if (m_cfg.trace_ops) 
 				begin
-					`uvm_info("REG_DRV",$sformatf("[%s] RD @0x%02h -> 0x%02h",vif.USE_WB ? "WB" : "LEG", t.addr, t.rdata),UVM_LOW)
+					`uvm_info("REG_DRV",$sformatf("[%s] RD @0x%02h -> 0x%02h",vif.USE_WB ? "WB" : "LEG", req.addr, req.rdata),UVM_LOW)
 				end 
 		end 
 		

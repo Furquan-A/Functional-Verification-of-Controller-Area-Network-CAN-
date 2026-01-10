@@ -42,7 +42,7 @@ L	atency correlation between reg ops and CAN bus behavior
 	extern function new(string name = "reg_transaction");
 	extern function bit is_read();
 	extern function bit is_write();
-	extern function do_print(uvm_printer printer);
+	extern function void do_print(uvm_printer printer);
 
 endclass 
 
@@ -62,12 +62,12 @@ function void reg_transaction :: do_print(uvm_printer printer);
 	super.do_print(printer);
 	
 	printer.print_string("kind",  is_write() ? "WRITE" : "READ");
-    printer.print_field_int("addr",  addr, 8, UVM_HEX);
+    printer.print_field("addr",  addr, 8, UVM_HEX);
     if (is_write())
-      printer.print_field_int("wdata", wdata, 8, UVM_HEX);
+      printer.print_field("wdata", wdata, 8, UVM_HEX);
     else
-      printer.print_field_int("rdata", rdata, 8, UVM_HEX);
-    printer.print_field_int("success", success, 1, UVM_BIN);
+      printer.print_field("rdata", rdata, 8, UVM_HEX);
+    printer.print_field("success", success, 1, UVM_BIN);
   endfunction
 	
 `endif // REG_TRANSACTION_SV

@@ -16,11 +16,11 @@ class reg_smoke_test extends uvm_test;
 	extern task run_phase(uvm_phase phase);
 	
 endclass : reg_smoke_test
-`endif //REG_SMOKE_TEST_SV
+
 
 // ====================== new ==============================================================
 
-function reg_smoke_test :: new (string name  = "reg_smoke_test", uvm_component parent)l
+function reg_smoke_test :: new (string name  = "reg_smoke_test", uvm_component parent);
 	super.new(name,parent);
 endfunction 
 
@@ -83,4 +83,4 @@ task reg_smoke_test :: run_phase(uvm_phase phase);
 	phase.drop_objection(this);
 endtask 
 
-	
+`endif //REG_SMOKE_TEST_SV
