@@ -14,7 +14,7 @@ class reg_agent extends uvm_agent;
 	reg_sequencer     rseqrh;
 	reg_agent_config  m_cfg;
 
-	uvm_analysis_port #(reg_txn) ap;
+	uvm_analysis_port #(reg_transaction) ap;
 
 
 	// ========== UVM Factory Registration ==========
@@ -52,7 +52,7 @@ function void build_phase(uvm_phase phase);
 		rseqrh = reg_sequencer::type_id::create("rseqrh",this);
 	end 
 
-	`uvm_info("REG_AGENT",$sformatf("Built reg_agent in %s mode with %s bus",m_cfg.active.name(),m_cfg.bus_type.name()),UVM_MEDIUM)
+	`uvm_info("REG_AGENT",$sformatf("Built reg_agent in %s mode with %s bus",m_cfg.is_active.name(),m_cfg.expect_bus.name()),UVM_MEDIUM)
 
 endfunction : build_phase 
 

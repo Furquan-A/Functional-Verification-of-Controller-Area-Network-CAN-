@@ -37,9 +37,9 @@ class can_transaction extends uvm_sequence_item;
 
     // keep error knobs out of pack/compare by default (optional)
     `uvm_field_int(inj_crc_error, UVM_DEFAULT | UVM_NOPACK)
-    `uvm_field_int(inj_stuff_err, UVM_DEFAULT | UVM_NOPACK)
-    `uvm_field_int(inj_form_err,  UVM_DEFAULT | UVM_NOPACK)
-    `uvm_field_int(inj_ack_err,   UVM_DEFAULT | UVM_NOPACK)
+    `uvm_field_int(inj_stuff_error, UVM_DEFAULT | UVM_NOPACK)
+    `uvm_field_int(inj_form_error,  UVM_DEFAULT | UVM_NOPACK)
+    `uvm_field_int(inj_ack_error,   UVM_DEFAULT | UVM_NOPACK)
 
     `uvm_field_int(crc_obs,       UVM_DEFAULT | UVM_NOPACK)
 	`uvm_object_utils_end
@@ -139,16 +139,16 @@ class can_transaction extends uvm_sequence_item;
 		
 		printer.print_int("payload_bytes",data.size(), UVM_DEC);
 		
-		printer.print_field_int("inj_crc_error", inj_crc_error, 1, UVM_BIN);
-		printer.print_field_int("inj_stuff_err",   inj_stuff_err,   1, UVM_BIN);
-		printer.print_field_int("inj_form_err",    inj_form_err,    1, UVM_BIN);
-		printer.print_field_int("inj_ack_err",     inj_ack_err,     1, UVM_BIN);
+		printer.print_field("inj_crc_error",     inj_crc_error,     1, UVM_BIN);
+		printer.print_field("inj_stuff_error",   inj_stuff_error,   1, UVM_BIN);
+		printer.print_field("inj_form_error",    inj_form_error,    1, UVM_BIN);
+		printer.print_field("inj_ack_error",     inj_ack_error,     1, UVM_BIN);
 		
 		// ------ optional ( print observability ) -------------------
 		
 		printer.print_time("t_start", t_start);
 		printer.print_time("t_end", t_end);
-		printer.print_field_int("crc_obs", crc_obs, 15, UVM_HEX);
+		printer.print_field("crc_obs", crc_obs, 15, UVM_HEX);
 	
 	endfunction 
 endclass 

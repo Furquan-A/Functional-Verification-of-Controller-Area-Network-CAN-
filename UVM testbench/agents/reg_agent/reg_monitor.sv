@@ -28,7 +28,7 @@ function reg_monitor :: new (string name = "reg_monitor", uvm_component parent);
 	ap = new("ap",this);
 endfunction 
 
-function reg_monitor :: build_phase(uvm_phase phase);
+function void reg_monitor :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
 	if(!uvm_config_db#(reg_agent_config)::get(this,"","m_cfg",r_cfg))
@@ -85,8 +85,8 @@ task reg_monitor :: run_phase(uvm_phase phase);
 						reg_transaction t = reg_transaction::type_id::create("t");
 							
 						t.kind = REG_WRITE;
-						t.addr = vif.lg_cb.port_0_o; // address phase
-						t.wdata = vif.lg_cb.port_0_o;// data (shared bus)
+						t.addr = vif.port_0_o; // address phase
+						t.wdata = vif.port_0_o;// data (shared bus)
 							
 						t.success = 1'b1;
 						ap.write(t);
@@ -98,8 +98,8 @@ task reg_monitor :: run_phase(uvm_phase phase);
 						reg_transaction t = reg_transaction::type_id::create("t");
 							
 						t.kind = REG_READ;
-						t.addr = vif.lg_cb.port_0_o; // address phase
-						t.rdata = vif.lg_cb.port_0_i;
+						t.addr = vif.port_0_o; // address phase
+						t.rdata = vif.port_0_i;
 							
 						t.success = 1'b1;
 						ap.write(t);
