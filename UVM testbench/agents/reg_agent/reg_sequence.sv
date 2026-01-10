@@ -95,7 +95,7 @@ endclass : reg_base_seq
 // ====================================================================================================================================================================
 // ====================================================================================================================================================================
 // WRITE SEQUENCES 
-`include "can_defines.sv"
+//`include "can_defines.sv"
 class reg_write_seq extends reg_base_seq;
 
 	`uvm_object_utils(reg_write_seq);
@@ -128,7 +128,7 @@ class reg_read_seq extends reg_base_seq;
 	randc bit[7:0] addr;
 	
 	// output of the read 
-	output bit[7:0] data_out;
+	 bit[7:0] data_out;
 	
 	function new(string name = "reg_write_seq");
 		super.new(name);
@@ -161,7 +161,7 @@ endclass : reg_read_seq
 `include "uvm_macros.svh"
 import uvm_pkg::*;
  
-`include "can_defines.sv"
+//`include "can_defines.sv"
 
 class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operation
 
@@ -182,10 +182,11 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 	// Main initialization body()
 	//----------------------------------------------------------------
 	virtual task body();
+		byte mode_reset
 		`uvm_info("REG_INIT_SEQ","Starting Can Controller initialization", UVM_MEDIUM)
 		
 		// ENTER RESET MODE 
-		byte mode_reset = `CAN_MODE_RESET_M; // bit 0 = reset mode 
+		mode_reset = `CAN_MODE_RESET_M; // bit 0 = reset mode 
 		write_reg(`CAN_MODE_REG,mode_reset);
 		
 		// PROGRAM BIT TIMING BTR0 and BTR1
