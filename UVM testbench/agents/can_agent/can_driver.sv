@@ -15,6 +15,7 @@ class can_driver extends uvm_driver #(can_transaction);
 	can_agent_config c_cfg;
 	
 	virtual can_if vif;
+
 	
 	// Timing 
 	time bit_time;
@@ -37,7 +38,7 @@ class can_driver extends uvm_driver #(can_transaction);
 	
 	// ============================ build_phase ==================================================================
 	
-	function build_phase (uvm_phase phase);
+	function void build_phase (uvm_phase phase);
 		super.build_phase(phase);
 		
 		if(!uvm_config_db #(can_agent_config) :: get(this,"","m_cfg",c_cfg)
@@ -50,7 +51,7 @@ class can_driver extends uvm_driver #(can_transaction);
 		bit_time = c_cfg.bit_time_ns * 1ns;
 		sp_offset = (c_cfg.bit_time_ns * c_cfg.sample_point_pct*1ns)/100;
 		
-		`uvm_info("CAN_DRV", $sformatf("Driver ready: bit_time=%0t sp_offset=%0t (%0d%%)",bit_time, sp_offset, m_cfg.sample_point_pct),UVM_LOW)
+		`uvm_info("CAN_DRV", $sformatf("Driver ready: bit_time=%0t sp_offset=%0t (%0d%%)",bit_time, sp_offset, c_cfg.sample_point_pct),UVM_LOW)
 	endfunction
 	
 	// ============================= run_phase ===================================================================

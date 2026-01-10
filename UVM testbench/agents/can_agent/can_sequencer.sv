@@ -20,7 +20,7 @@ endfunction
 function void can_sequencer :: build_phase(uvm_phase phase);	
 	super.build_phase(phase);
 	
-	`uvm_info(get_full_name(), "Inside Build_phase", UVM)
+	`uvm_info(get_full_name(), "Inside Build_phase", UVM_LOW)
 endfunction 
 
 `endif
