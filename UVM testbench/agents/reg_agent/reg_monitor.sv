@@ -77,10 +77,10 @@ task reg_monitor :: run_phase(uvm_phase phase);
 							ap.write(t);
 					end 
 			`else // ------ LEGACY MODE ------
-				@(posedge vif.lg_cb.clk_i);
+				@(posedge vif.clk_i);
 					
 				// Write detected when write HIGH and Chip select HIGH 
-				if (vif.lg_cb.cs_can_i && vif.lg_cb.wr_i) 
+				if (vif.cs_can_i && vif.wr_i) 
 					begin
 						reg_transaction t = reg_transaction::type_id::create("t");
 							
@@ -93,7 +93,7 @@ task reg_monitor :: run_phase(uvm_phase phase);
 					end 
 					
 				// Read detected when RD is HIGH and Chip Select ACTIVE 
-				if (vif.lg_cb.cs_can_i && vif.lg_cb.rd_i) 
+				if (vif.cs_can_i && vif.rd_i) 
 					begin
 						reg_transaction t = reg_transaction::type_id::create("t");
 							
