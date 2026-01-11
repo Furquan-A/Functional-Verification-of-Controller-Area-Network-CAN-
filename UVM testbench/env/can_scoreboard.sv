@@ -4,13 +4,15 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-
+  `uvm_analysis_imp_decl(_exp)
+  `uvm_analysis_imp_decl(_obs) 
+  
 class can_scoreboard extends uvm_component;
 	`uvm_component_utils(can_scoreboard)
 	
 	// analysis PORTS 
-	uvm_analysis_imp #(can_transaction,can_scoreboard) exp_imp;
-	uvm_analysis_imp #(can_transaction, can_scoreboard) obs_imp;
+	uvm_analysis_imp_exp #(can_transaction,can_scoreboard) exp_imp;
+	uvm_analysis_imp_obs #(can_transaction, can_scoreboard) obs_imp;
 	
 	// Queues of the expected and the observed transactions 
 	can_transaction exp_q[$];
