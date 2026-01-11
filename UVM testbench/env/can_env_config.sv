@@ -39,13 +39,13 @@ function void can_env_config :: resize(int unsigned n_can, int unsigned n_reg);
 	c_cfg = new[no_of_can_agent];
 	foreach(c_cfg[i])
 		begin 	
-			c_cfg = can_env_config::type_id::create($sformatf("c_cfg[%0d]",i),this);
+			c_cfg = can_agent_config::type_id::create($sformatf("c_cfg[%0d]",i));
 		end 
 	
 	r_cfg = new[no_of_reg_agent];
 	foreach(r_cfg[i])
 		begin 
-			r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg[%0d]",i),this);
+			r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg[%0d]",i));
 		end 
 endfunction : resize
 
