@@ -182,7 +182,7 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 	// Main initialization body()
 	//----------------------------------------------------------------
 	virtual task body();
-		byte mode_reset
+		byte mode_reset;
 		`uvm_info("REG_INIT_SEQ","Starting Can Controller initialization", UVM_MEDIUM);
 		
 		// ENTER RESET MODE 
@@ -309,10 +309,10 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 				foreach (data[i]) 
 					begin
 						write_reg(`CAN_TX_DATA0_EXT + 5 + i, data[i]);
-					 end
+					end
 			end
 		
-		 `uvm_info("REG_LOAD_TX_BUF","TX buffer load complete.",UVM_MEDIUM)
+		 `uvm_info("REG_LOAD_TX_BUF","TX buffer load complete.",UVM_MEDIUM);
 	endtask : body
 endclass 
 `endif // REG_LOAD_TX_BUFFER_SEQUENCE_SV
@@ -338,12 +338,12 @@ class reg_txreq_seq extends reg_base_seq;
 	endfunction 
 	
 	virtual task body();
-		`uvm_info("REG_TXREQ_SEQ","Issuing TXREQ command to CAN controller...",UVM_MEDIUM)
+		`uvm_info("REG_TXREQ_SEQ","Issuing TXREQ command to CAN controller...",UVM_MEDIUM);
 		
 		// COMMAND register bit0 = TREQ ( CAN_CMD_TREQ_M)
 		write_reg(`CAN_COMMAND_REG,`CAN_CMD_TXREQ_M);
 		
-		`uvm_info("REG_TXREQ_SEQ","TXREQ command sent successfully.", UVM_MEDIUM)
+		`uvm_info("REG_TXREQ_SEQ","TXREQ command sent successfully.", UVM_MEDIUM);
 	endtask 
 endclass: reg_txreq_seq
 `endif
@@ -368,12 +368,12 @@ class reg_abort_tx_seq extends reg_base_seq;
 	endfunction 
 	
 	virtual task body();
-		`uvm_info("REG_ABORT_TX_SEQ","Issuing ABORT_TX command to CAN controller...",UVM_MEDIUM)
+		`uvm_info("REG_ABORT_TX_SEQ","Issuing ABORT_TX command to CAN controller...",UVM_MEDIUM);
 		
 		// COMMAND register bit0 = TREQ ( CAN_CMD_TREQ_M)
 		write_reg(`CAN_COMMAND_REG,`CAN_CMD_ABORT_M);
 		
-		`uvm_info("REG_ABORT_TX_SEQ","ABORT_TX command sent successfully.", UVM_MEDIUM)
+		`uvm_info("REG_ABORT_TX_SEQ","ABORT_TX command sent successfully.", UVM_MEDIUM);
 	endtask 
 endclass : reg_abort_tx_seq
 `endif
@@ -398,12 +398,12 @@ class reg_release_rx_buffer_seq extends reg_base_seq;
 
   // ---------------------- MAIN BODY ----------------------
   virtual task body();
-    `uvm_info("REG_REL_RX_BUF_SEQ","Releasing RX buffer (COMMAND bit2)...", UVM_MEDIUM)
+    `uvm_info("REG_REL_RX_BUF_SEQ","Releasing RX buffer (COMMAND bit2)...", UVM_MEDIUM);
 
     // COMMAND bit2 = RELEASE_BUFFER
     write_reg(`CAN_COMMAND_REG, `CAN_CMD_REL_RX_M);
 
-    `uvm_info("REG_REL_RX_BUF_SEQ","RX buffer released.", UVM_MEDIUM)
+    `uvm_info("REG_REL_RX_BUF_SEQ","RX buffer released.", UVM_MEDIUM);
   endtask : body
 
 endclass : reg_release_rx_buffer_seq
@@ -430,12 +430,12 @@ class reg_clear_overrun_seq extends reg_base_seq;
 
   // ---------------------- MAIN BODY ----------------------
   virtual task body();
-    `uvm_info("REG_CLR_OVR_SEQ","Clearing RX overrun condition (COMMAND.CLR_OVR)...", UVM_MEDIUM)
+    `uvm_info("REG_CLR_OVR_SEQ","Clearing RX overrun condition (COMMAND.CLR_OVR)...", UVM_MEDIUM);
 
     // COMMAND bit3 → CLEAR DATA OVERRUN
     write_reg(`CAN_COMMAND_REG, `CAN_CMD_CLR_OVR_M);
 
-    `uvm_info("REG_CLR_OVR_SEQ", "RX overrun cleared.", UVM_MEDIUM)
+    `uvm_info("REG_CLR_OVR_SEQ", "RX overrun cleared.", UVM_MEDIUM);
 	
   endtask : body
 
@@ -463,12 +463,12 @@ class reg_self_rx_seq extends reg_base_seq;
 
   // ---------------------- MAIN BODY ----------------------
   virtual task body();
-    `uvm_info("REG_SELF_RX_SEQ", "Triggering SELF-RECEPTION (COMMAND.SELF_RX_REQ)...", UVM_MEDIUM)
+    `uvm_info("REG_SELF_RX_SEQ", "Triggering SELF-RECEPTION (COMMAND.SELF_RX_REQ)...", UVM_MEDIUM);
 
     // COMMAND bit4 → SELF RX REQUEST
     write_reg(`CAN_COMMAND_REG, `CAN_CMD_SELF_RX_M);
 
-    `uvm_info("REG_SELF_RX_SEQ","SELF RX request issued.", UVM_MEDIUM)
+    `uvm_info("REG_SELF_RX_SEQ","SELF RX request issued.", UVM_MEDIUM);
   endtask : body
 
 endclass : reg_self_rx_seq
@@ -489,7 +489,7 @@ class reg_enable_irq_seq extends reg_base_seq;
 	endfunction 
 	
 	virtual task body();
-		`uvm_info("REG_ENABLE_IRQ_SEQ", $sformatf("Enabling IRQs: mask=0x%02h", irq_enable_mask), UVM_MEDIUM)
+		`uvm_info("REG_ENABLE_IRQ_SEQ", $sformatf("Enabling IRQs: mask=0x%02h", irq_enable_mask), UVM_MEDIUM);
 		
 		write_reg(`CAN_IRQ_EN_EXT,irq_enable_mask);
 	endtask 
@@ -510,7 +510,7 @@ class reg_clear_irq_seq extends reg_base_seq;
   endfunction
 
   virtual task body();
-    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM)
+    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM);
 	
     read_reg(`CAN_IRQ_REG, irq_value);
   endtask
@@ -528,7 +528,7 @@ class reg_set_listen_only_seq extends reg_base_seq;
   endfunction
 
   virtual task body();
-    `uvm_info("REG_LISTEN_ONLY_SEQ", "Entering LISTEN-ONLY mode", UVM_MEDIUM)
+    `uvm_info("REG_LISTEN_ONLY_SEQ", "Entering LISTEN-ONLY mode", UVM_MEDIUM);
 	
     write_reg(`CAN_MODE_REG, `CAN_MODE_LISTEN_ONLY_M);
   endtask
@@ -547,7 +547,7 @@ class reg_clear_irq_seq extends reg_base_seq;
   function new(string name="reg_clear_irq_seq"); super.new(name); endfunction
 
   virtual task body();
-    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM)
+    `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM);
     read_reg(`CAN_IRQ_REG, irq_value);
   endtask
 endclass
@@ -561,7 +561,7 @@ class reg_set_self_test_mode_seq extends reg_base_seq;
   function new(string name="reg_set_self_test_mode_seq"); super.new(name); endfunction
 
   virtual task body();
-    `uvm_info("REG_SELF_TEST_SEQ", "Enabling SELF-TEST mode", UVM_MEDIUM)
+    `uvm_info("REG_SELF_TEST_SEQ", "Enabling SELF-TEST mode", UVM_MEDIUM);
     write_reg(`CAN_MODE_REG, `CAN_MODE_SELF_TEST_M);
   endtask
 endclass
@@ -576,7 +576,7 @@ class reg_set_accept_all_seq extends reg_base_seq;
   function new(string name="reg_set_accept_all_seq"); super.new(name); endfunction
 
   virtual task body();
-    `uvm_info("REG_ACC_ALL_SEQ", "Programming ACCEPT-ALL filters", UVM_MEDIUM)
+    `uvm_info("REG_ACC_ALL_SEQ", "Programming ACCEPT-ALL filters", UVM_MEDIUM);
     write_reg(`CAN_ACC_CODE0_BASIC, 8'h00);
     write_reg(`CAN_ACC_MASK0_BASIC, 8'hFF);   // ignore all bits → accept all
   endtask
@@ -588,10 +588,12 @@ endclass
 class reg_set_accept_none_seq extends reg_base_seq;
   `uvm_object_utils(reg_set_accept_none_seq)
 
-  function new(string name="reg_set_accept_none_seq"); super.new(name); endfunction
+	function new(string name="reg_set_accept_none_seq");
+		super.new(name); 
+	endfunction
 
   virtual task body();
-    `uvm_info("REG_ACC_NONE_SEQ", "Programming ACCEPT-NONE filters", UVM_MEDIUM)
+    `uvm_info("REG_ACC_NONE_SEQ", "Programming ACCEPT-NONE filters", UVM_MEDIUM);
     write_reg(`CAN_ACC_CODE0_BASIC, 8'h00);
     write_reg(`CAN_ACC_MASK0_BASIC, 8'h00);   // compare all bits → only ID=0 accepted
   endtask
@@ -605,19 +607,23 @@ class reg_poll_status_seq extends reg_base_seq;
   `uvm_object_utils(reg_poll_status_seq)
 
   byte status;
-   function new(string name="reg_poll_status_seq"); super.new(name); endfunction
+	function new(string name="reg_poll_status_seq");
+		super.new(name);
+	endfunction
 
   virtual task body();
     `uvm_info("REG_POLL_STATUS_SEQ",
               "Polling STATUS register until TX_COMPLETE or RX_READY...",
-              UVM_MEDIUM)
+              UVM_MEDIUM);
 
     // Simple busy wait (Type A)
     repeat (1000) begin
       read_reg(`CAN_STATUS_REG, status);
       if (status[`CAN_ST_TX_COMPLETE_BIT] || status[`CAN_ST_RX_RDY_BIT])
-        break;
-      #1ns;
+		begin 
+			break;
+			#1ns;
+		end 
     end
   endtask
 endclass
@@ -634,7 +640,7 @@ class reg_reset_seq extends reg_base_seq;
   virtual task body();
     `uvm_info("REG_RESET_SEQ",
               "Asserting RESET mode on CAN controller.",
-              UVM_MEDIUM)
+              UVM_MEDIUM);
 
     write_reg(`CAN_MODE_REG, `CAN_MODE_RESET_M);
   endtask
