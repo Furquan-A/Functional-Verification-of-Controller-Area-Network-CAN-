@@ -4,7 +4,7 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-class can_sequencer extends uvm_sequencer ;
+class can_sequencer extends uvm_sequencer #(can_transaction) ;
 	
 	`uvm_component_utils(can_sequencer)
 	

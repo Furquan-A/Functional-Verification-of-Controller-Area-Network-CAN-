@@ -27,7 +27,7 @@ endclass
 
 // ================================= new ===================================================
 
-function can_agent :: new(string name = " can_agent", uvm_component parent);
+function can_agent :: new(string name , uvm_component parent);
 	super.new(name,parent);
 	drv_ap = new("drv_ap",this);
 	mon_ap = new("mon_ap",this);
