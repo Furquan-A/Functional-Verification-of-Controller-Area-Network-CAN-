@@ -42,7 +42,7 @@ function void can_env :: build_phase (uvm_phase phase);
 			foreach(c_agent[i])
 				begin 
 					c_agent[i] = can_agent::type_id::create($sformatf("c_agent[%0d]",i),this);
-					uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent[%0d]*"),"m_cfg",m_cfg.c_cfg[i]);
+					uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent[%0d]*",i),"m_cfg",m_cfg.c_cfg[i]);
 				end 
 		end 
 		
@@ -52,7 +52,7 @@ function void can_env :: build_phase (uvm_phase phase);
 			foreach(r_agent[i])
 				begin 
 					r_agent[i] = reg_agent::type_id::create($sformatf("r_agent[%0d]",i),this);
-					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent[%0d]*"),"m_cfg",m_cfg.r_cfg[i]);
+					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent[%0d]*",i),"m_cfg",m_cfg.r_cfg[i]);
 				end 
 		end 
 		/*
