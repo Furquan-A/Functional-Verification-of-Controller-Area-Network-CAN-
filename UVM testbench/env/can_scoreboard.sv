@@ -45,7 +45,7 @@ class can_scoreboard extends uvm_component;
 		compare_if_ready();
 	endfunction
 	
-	// ======================== Compare when Both sides are ready =======================================
+	// ======================== Compare when Both sides are ready ======================================
 	
 	function void compare_if_ready();
 		can_transaction exp;
