@@ -1,4 +1,4 @@
-`ifdef REG_SMOKE_TEST_SV
+`ifndef REG_SMOKE_TEST_SV
 `define REG_SMOKE_TEST_SV
 
 `include "uvm_macros.svh"
@@ -8,11 +8,11 @@ import uvm_pkg::*;
 class reg_smoke_test extends uvm_test;
 	`uvm_component_utils(reg_smoke_test)
 	
-	env m_env;
-	env_config cfg;
+	can_env m_env;
+	can_env_config cfg;
 	
 	extern function new(string name = "reg_smoke_test", uvm_component parent);
-	extern void function build_phase(uvm_phase phase);
+	extern  function void build_phase(uvm_phase phase);
 	extern task run_phase(uvm_phase phase);
 	
 endclass : reg_smoke_test
@@ -26,10 +26,10 @@ endfunction
 
 // ======================= build_phase =======================================================
 
-function reg_smoke_test :: build_phase(uvm_phase phase);
+function void reg_smoke_test :: build_phase(uvm_phase phase);
 	super.build_phase(phase);
 	
-	m_env = env :: type_id:: create("m_env",this);
+	m_env = can_env :: type_id:: create("m_env",this);
 	cfg = can_env_config::type_id::create("cfg");
 	
 	// only the reg agent is enabled for this smoke test 
@@ -46,8 +46,9 @@ function reg_smoke_test :: build_phase(uvm_phase phase);
 	cfg.r_cfg[0] = reg_agent_config::type_id::create("r_cfg0");
 	cfg.r_cfg[0].is_active = UVM_ACTIVE;
 	
-	uvm_config_db #(virtual can_if)::get(this,"","vif",cfg.r_cfg[0].vif);
-	
+	if (!uvm_config_db #(virtual can_if)::get(this,"","vif",cfg.r_cfg[0].vif))
+		`uvm_fatal("REG_SMOKE_TEST","Failed to get can_if from config DB");
+
 	// set the config for env 
 	uvm_config_db #(can_env_config)::set(this,"m_env","can_env_config",cfg);
 endfunction 
@@ -55,11 +56,11 @@ endfunction
 // ===================== run_phase ============================================================
 
 task reg_smoke_test :: run_phase(uvm_phase phase);
-	super.run_phase(phase);
+	
 	
 	phase.raise_objection(this);
 	
-	`uvm_info("REG_SMOKE_TEST","starting register smoke test ")
+	`uvm_info("REG_SMOKE_TEST","starting register smoke test ",UVM_MEDIUM);
 	
 	// ----------------------------------------------------------------------
 	// BASIC WRITE TEST 

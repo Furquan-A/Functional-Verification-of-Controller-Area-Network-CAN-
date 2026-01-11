@@ -31,7 +31,7 @@ class can_smoke_test extends uvm_test;
 		// allow some time for monitor + scoreboard 
 		#100us;
 		
-		phase.drop_objecttion(this);
+		phase.drop_objection(this);
 	endtask 
 endclass 
 `endif
