@@ -41,7 +41,7 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
 	*/
 	virtual task pre_body();
 		if (!$cast(p_sequencer, m_sequencer))
-		  `uvm_fatal("REG_BASE_SEQ", "Could not cast p_sequencer!");
+		  `uvm_fatal("REG_BASE_SEQ", "Could not cast p_sequencer!")
 	endtask
   
 	// ====================== Helper : write a register =======================================
@@ -59,7 +59,7 @@ class reg_base_seq  extends uvm_sequence #(reg_transaction);
 		
 		if(!t.success)
 			begin 
-				`uvm_error("REG_WRITE",$sformatf("Write to 0x%02h FAILED", addr))
+				`uvm_error("REG_WRITE",$sformatf("Write to 0x%02h FAILED", addr));
 			end 
 	endtask 
  
@@ -98,7 +98,7 @@ endclass : reg_base_seq
 //`include "can_defines.sv"
 class reg_write_seq extends reg_base_seq;
 
-	`uvm_object_utils(reg_write_seq);
+	`uvm_object_utils(reg_write_seq)
 	 
 	// inputs to the sequence 
 	randc bit [7:0] addr;
@@ -110,7 +110,7 @@ class reg_write_seq extends reg_base_seq;
 	
 	// The body uses the simple base class helpers 
 	virtual task body();
-		`uvm_info("REG_WRITE_SEQ",$sformatf("WRITE: addr = 0x%02h data = 0x%02",addr,data),UVM_MEDIUM)
+		`uvm_info("REG_WRITE_SEQ",$sformatf("WRITE: addr = 0x%02h data = 0x%02",addr,data),UVM_MEDIUM);
 		
 		write_reg(addr,data);
 	endtask 
@@ -135,11 +135,11 @@ class reg_read_seq extends reg_base_seq;
 	endfunction 
 	
 	virtual task body();
-		`uvm_info("REG_READ_SEQ",$sformatf("READ data at addr = 0x%02h",addr),UVM_MEDIUM)
+		`uvm_info("REG_READ_SEQ",$sformatf("READ data at addr = 0x%02h",addr),UVM_MEDIUM);
 		
 		read_reg(addr,data_out);
 		
-		`uvm_info("REG_READ_SEQ",  $sformatf("READ: addr=0x%02h -> data=0x%02h", addr, data_out), UVM_MEDIUM)
+		`uvm_info("REG_READ_SEQ",  $sformatf("READ: addr=0x%02h -> data=0x%02h", addr, data_out), UVM_MEDIUM);
 	endtask 
 	
 endclass : reg_read_seq
@@ -183,7 +183,7 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 	//----------------------------------------------------------------
 	virtual task body();
 		byte mode_reset
-		`uvm_info("REG_INIT_SEQ","Starting Can Controller initialization", UVM_MEDIUM)
+		`uvm_info("REG_INIT_SEQ","Starting Can Controller initialization", UVM_MEDIUM);
 		
 		// ENTER RESET MODE 
 		mode_reset = `CAN_MODE_RESET_M; // bit 0 = reset mode 
@@ -221,12 +221,12 @@ class reg_init_seqs extends reg_base_seq; // Is essential for proper CAN Operati
 				*/
 				byte clkdiv = `CAN_CLKDIV_EXTENDED_M;
 				write_reg(`CAN_CLOCK_DIVIDER,clkdiv);
-				 `uvm_info("REG_INIT_SEQ", "Extended mode enabled", UVM_LOW)
+				 `uvm_info("REG_INIT_SEQ", "Extended mode enabled", UVM_LOW);
 			end 
 			
 		// EXIT RESET MODE -> Normal Operation 
 		write_reg(`CAN_MODE_REG,8'h00); // clear reset bit 
-		`uvm_info("REG_INIT_SEQ","CAN controller initialization COMPLETE",UVM_MEDIUM)
+		`uvm_info("REG_INIT_SEQ","CAN controller initialization COMPLETE",UVM_MEDIUM);
 	endtask : body
 
 endclass : reg_init_seqs
@@ -261,16 +261,16 @@ class reg_load_tx_buffer_seq extends reg_base_seq;
 	
 	
 	virtual task body();
-		`uvm_info("REG_LOAD_TX_BUFFER_SEQUENCE",$sformatf("loading TX Buffer: ID = %0h DLC = %0d EXT = %0b",can_id,dlc,use_extended_mode),UVM_MEDIUM)
+		`uvm_info("REG_LOAD_TX_BUFFER_SEQUENCE",$sformatf("loading TX Buffer: ID = %0h DLC = %0d EXT = %0b",can_id,dlc,use_extended_mode),UVM_MEDIUM);
 		
 		// --------------- Validation -------------------
 		if(dlc > 8)
 			begin 
-				`uvm_fatal("TXBUF_SEQ","DLC>8 is illigal for classic CAN !")
+				`uvm_fatal("TXBUF_SEQ","DLC>8 is illigal for classic CAN !");
 			end 
 		if(data.size() != dlc) 
 			begin 
-				`uvm_fatal("TXBUF_SEQ","data[] size does not match the DLC ")
+				`uvm_fatal("TXBUF_SEQ","data[] size does not match the DLC ");
 			end 
 			
 		// -------------------1. Write ID, Control fields into the TX buffer register -------------------
@@ -549,22 +549,6 @@ class reg_clear_irq_seq extends reg_base_seq;
   virtual task body();
     `uvm_info("REG_CLEAR_IRQ_SEQ", "Clearing IRQ register...", UVM_MEDIUM)
     read_reg(`CAN_IRQ_REG, irq_value);
-  endtask
-endclass
-
-
-// ====================================================================================================================================================================
-// ====================================================================================================================================================================
-// reg_set_listen_only_seq  (MODE bit1)
-
-class reg_set_listen_only_seq extends reg_base_seq;
-  `uvm_object_utils(reg_set_listen_only_seq)
-
-  function new(string name="reg_set_listen_only_seq"); super.new(name); endfunction
-
-  virtual task body();
-    `uvm_info("REG_LISTEN_ONLY_SEQ", "Entering LISTEN-ONLY mode", UVM_MEDIUM)
-    write_reg(`CAN_MODE_REG, `CAN_MODE_LISTEN_ONLY_M);
   endtask
 endclass
 
