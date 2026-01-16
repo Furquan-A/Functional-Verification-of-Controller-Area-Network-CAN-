@@ -41,7 +41,7 @@ class can_std_smoke_tx_seq extends uvm_sequence #(can_transaction);
 
     `uvm_info("CAN_SMOKE_SEQ",
               $sformatf("Sent one CAN STD DATA frame: %s", tr.convert2string()),
-              UVM_LOW)
+              UVM_LOW);
   endtask
 
 endclass : can_std_smoke_tx_seq
@@ -80,3 +80,19 @@ class can_ext_smoke_tx_seq extends uvm_sequence #(can_transaction);
 		tr.data[3] = 8'hA1;
 		tr.data[4] = 8'h55;
 		
+		
+		// No error injection for smoke
+		tr.inj_crc_error   = 1'b0;
+		tr.inj_stuff_error = 1'b0;
+		tr.inj_form_error  = 1'b0;
+		tr.inj_ack_error   = 1'b0;
+		
+		start_item(tr);
+		finish_item(tr);
+		
+		`uv_info("CAN_SMOKE_SEQ",$sformatf("Sent one CAN EXT Frame: %s", tr.convert2string()),UVM_LOW);
+	endtask 
+	
+endcalss 
+
+`endif // CAN_EXT_SMOKE_TX_SEQ_SV
