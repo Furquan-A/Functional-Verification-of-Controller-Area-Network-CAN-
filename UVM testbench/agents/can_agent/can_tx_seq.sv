@@ -24,7 +24,7 @@ class can_std_smoke_tx_seq extends uvm_sequence #(can_transaction);
     tr.f_type  = `CAN_DATA_FRAME;
     tr.dlc     = 4;
 
-    tr.data = new[4];
+    tr.data = new[tr.dlc];
     tr.data[0] = 8'hAA;
     tr.data[1] = 8'h55;
     tr.data[2] = 8'h0F;
@@ -47,3 +47,36 @@ class can_std_smoke_tx_seq extends uvm_sequence #(can_transaction);
 endclass : can_std_smoke_tx_seq
 
 `endif // CAN_STD_SMOKE_TX_SEQ_SV
+
+
+// ------------------------- EXTENDED FRAME SEQUENCES ----------------------------------------
+`ifndef CAN_EXT_SMOKE_TX_SEQ_SV
+`define CAN_EXT_SMOKE_TX_SEQ_SV
+
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+class can_ext_smoke_tx_seq extends uvm_sequence #(can_transaction);
+	`uvm_object_utils(can_ext_smoke_tx_seq)
+	
+	function new(string name  = "can_ext_smoke_tx_seq");
+		super.new(name);
+	endfunction 
+	
+	task body();
+		can_transaction tr;
+		
+		tr = can_transaction::type_id::create("tr");
+		
+		tr.can_fmt = `CAN_ID_EXT;
+		tr.id = 29'h1AB_CDE3; // ( any value < 2^29)
+		tr.f_type = `CAN_DATA_FRAME;
+		tr.dlc = 5;
+		
+		tr.data = new[tr.dlc];
+		tr.data[0] = 8'hAA;
+		tr.data[1] = 8'h44;
+		tr.data[2] = 8'h22;
+		tr.data[3] = 8'hA1;
+		tr.data[4] = 8'h55;
+		
