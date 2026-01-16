@@ -145,8 +145,7 @@ interface can_if (
   // DUT hookup (Wishbone)
   modport dut_wb (
     input  clk_i, wb_clk_i, wb_rst_i, wb_cyc_i, wb_stb_i, wb_we_i, wb_adr_i, wb_dat_i, rx_i,
-    output wb_dat_o, wb_ack_o, tx_o, irq_on, bus_off_on, clkout_o,
-    inout
+    output wb_dat_o, wb_ack_o, tx_o, irq_on, bus_off_on, clkout_o
   );
   // TB driver (Wishbone)
   modport wb_master (clocking wb_cb, output rx_i, input tx_o, irq_on, bus_off_on, clkout_o);

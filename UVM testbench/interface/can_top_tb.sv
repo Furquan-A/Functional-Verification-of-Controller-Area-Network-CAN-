@@ -40,6 +40,31 @@ module can_top_tb;
 `endif
   end
 
+  // Classical CAN: wired-AND (dominant=0 wins).
+  // Use '1 as recessive default. Any node driving 0 forces bus to 0.
+  localparam int unsigned NUM_TB_NODES = 2;  // <--- change as you like
+
+  // Each TB node drives one element: 1=recessive, 0=dominant
+  logic [NUM_TB_NODES-1:0] tb_can_tx;
+
+  // Resolved bus and a combined vector including DUT
+  logic can_bus;
+  logic [NUM_TB_NODES:0] can_tx_all; // [0]=DUT, [1..]=TB nodes
+
+  // Default TB nodes to recessive (released bus)
+  initial tb_can_tx = '1;
+
+  // Combine all drivers (wired-AND)
+  always_comb begin
+    can_tx_all[0] = vif.tx_o; // DUT drives the bus
+    for (int i = 0; i < NUM_TB_NODES; i++) begin
+      can_tx_all[i+1] = tb_can_tx[i];
+    end
+  end
+
+  assign can_bus = &can_tx_all; // AND reduction => wired-AND
+  assign vif.rx_i = can_bus;    // Everyone samples the resolved bus
+  
   // --------------- DUT --------------------
   can_top dut (
 `ifdef CAN_WISHBONE_IF

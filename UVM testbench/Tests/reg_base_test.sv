@@ -76,7 +76,7 @@ task reg_smoke_test :: run_phase(uvm_phase phase);
 	// ----------------------------------------------------------------------
 	reg_read_seq rd = reg_read_seq :: type_id::create("rd_seq");
 	
-	rd.addr = `CAN_REG_MODE;
+	rd.addr = `CAN_MODE_REG;
 	rd.start(m_env.r_agent[0].rseqrh);
 	
 	`uvm_info("REG_SMOKE_TEST",$sformatf("Read MODE register returned = 0x%02h", rd.data_out),UVM_MEDIUM)
