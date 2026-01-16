@@ -49,14 +49,14 @@ module can_top_tb;
 
   // Combine all drivers (wired-AND)
   always_comb begin
-    can_tx_all[0] = vif.tx_o; // DUT drives the bus
+    can_tx_all[0] = 1'b1 // (dut ignored for the smoke test) vif.tx_o; // DUT drives the bus
     for (int i = 0; i < NUM_TB_NODES; i++) begin
       can_tx_all[i+1] = vif.tb_tx[i];
     end
   end
 
   assign can_bus = &can_tx_all; // AND reduction => wired-AND
-  assign vif.rx_i = can_bus;    // Everyone samples the resolved bus
+ assign vif.rx_i = can_bus;    // Everyone samples the resolved bus
   
   // --------------- DUT --------------------
   can_top dut (
@@ -91,7 +91,7 @@ module can_top_tb;
     // If your agents use modports, you can also set those here specifically.
     // Generic handle works too if your components declare "virtual can_if".
     uvm_config_db#(virtual can_if)::set(null, "*", "vif", vif);
-    run_test("reg_smoke_test");
+    run_test("can_smoke_test");
   end
 
   // -------- Optional Waves ---------------

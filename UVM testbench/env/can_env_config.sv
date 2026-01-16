@@ -3,13 +3,13 @@ class can_env_config extends uvm_object;
   `uvm_object_utils(can_env_config)
 
   bit has_can_agent         = 1;
-  bit has_reg_agent         = 1;
+  bit has_reg_agent         = 0;
   bit has_can_scoreboard    = 1;
   bit has_virtual_sequencer = 0; // enable later
   bit has_can_coverage      = 0;
 
   int unsigned no_of_can_agent = 1;
-  int unsigned no_of_reg_agent = 1;
+  int unsigned no_of_reg_agent = 0;
 
   can_agent_config c_cfg[];
   reg_agent_config r_cfg[];

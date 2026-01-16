@@ -33,7 +33,7 @@ class can_smoke_test extends uvm_test;
     // Make CAN agent active (so it has driver + sequencer)
     env_cfg.c_cfg[0].is_active = UVM_ACTIVE;
     env_cfg.c_cfg[0].node_id   = 0;
-
+	env_cfg.has_reg_agent = 0;
     // Make sure reg agent config has vif too (resize() already did if you fixed it)
     // env_cfg.r_cfg[0].is_active = UVM_ACTIVE; // if your reg_agent_config supports it
 

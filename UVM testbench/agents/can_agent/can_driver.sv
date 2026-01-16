@@ -4,48 +4,46 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-`include "can_defines.sv"
-`include "can_transaction.sv"
-`include "can_agent_config.sv"
+// If you compile via can_pkg.sv with correct order, prefer: import can_pkg::*; and remove includes below.
+// Keeping them here only if you compile this file standalone.
+//`include "can_defines.sv"
+//`include "can_transaction.sv"
+//`include "can_agent_config.sv"
 
 //--------------------------------------------------------------------------------------------------
-// can_driver
-// - Updated to NOT drive vif.rx_i anymore
-// - Drives node transmit intent via vif.can_cb.can_tx (TB-only signal you added in can_if)
-//   where: 1 = recessive (release), 0 = dominant (drive)
-// - Fixes: CRC enable bug, stuffing counter bug, DATA field bit bug, and a few typos.
+// can_driver (Phase-A ready)
+// - Drives node transmit intent via vif.can_cb.tb_tx[node_id]
+// - Does NOT drive vif.rx_i (bus model drives rx_i)
+// - Adds idle-bus timeout to avoid infinite hang
+// - Clamps DLC/bytes to classic CAN max (8)
 //--------------------------------------------------------------------------------------------------
 class can_driver extends uvm_driver #(can_transaction);
   `uvm_component_utils(can_driver)
 
   uvm_analysis_port #(can_transaction) ap;
 
-  can_transaction  tr;
   can_agent_config c_cfg;
-
-  virtual can_if vif;
+  virtual can_if   vif;
 
   // Timing
   time bit_time;
   time sp_offset;
 
-  // Bit stuffing bookkeeping (driver side)
+  // Bit stuffing bookkeeping
   bit          stuff_en;
   bit          last_tx_bit;
   int unsigned same_cnt;
 
-  // CRC
+  // CRC (kept as-is for now)
   bit        crc_en;
   bit [14:0] crc_reg;
   localparam bit [14:0] CAN_CRC15_POLY = 15'h4599;
 
-  // ------------------------------- Constructor --------------------------------
   function new(string name = "can_driver", uvm_component parent = null);
     super.new(name, parent);
     ap = new("ap", this);
   endfunction
 
-  // ------------------------------ build_phase ---------------------------------
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
 
@@ -55,21 +53,19 @@ class can_driver extends uvm_driver #(can_transaction);
     if (!uvm_config_db#(virtual can_if)::get(this, "", "vif", vif))
       `uvm_fatal("CAN_DRV", "Virtual can_if not found in config_db (key='vif')")
 
-    // Cache timing
     bit_time  = c_cfg.bit_time_ns * 1ns;
     sp_offset = (c_cfg.bit_time_ns * c_cfg.sample_point_pct * 1ns) / 100;
 
     `uvm_info("CAN_DRV",
-              $sformatf("Driver ready: bit_time=%0t sp_offset=%0t (%0d%%)",
-                        bit_time, sp_offset, c_cfg.sample_point_pct),
-              UVM_LOW)
+              $sformatf("Driver ready: node_id=%0d bit_time=%0t sp_offset=%0t (%0d%%)",
+                        c_cfg.node_id, bit_time, sp_offset, c_cfg.sample_point_pct),
+              UVM_LOW);
   endfunction
 
-  // ------------------------------ run_phase -----------------------------------
   task run_phase(uvm_phase phase);
     can_transaction tr_local;
 
-    // Default to recessive (release bus)
+    // Release bus (recessive) by default
     drive_tx(1'b1);
 
     forever begin
@@ -79,7 +75,7 @@ class can_driver extends uvm_driver #(can_transaction);
       send_frame(tr_local);
       tr_local.t_end   = $time;
 
-      // Optional: publish what we drove
+      // Optional: publish what we drove (expected stream)
       ap.write(tr_local);
 
       seq_item_port.item_done();
@@ -94,35 +90,27 @@ class can_driver extends uvm_driver #(can_transaction);
   // 1 = recessive (release), 0 = dominant (drive)
   task automatic drive_tx(bit level);
     @vif.can_cb;
-    // You said you added can_tx to can_if; this assumes it is in can_cb as an output
     vif.can_cb.tb_tx[c_cfg.node_id] <= level;
   endtask
 
-  // Drive one physical bit time (raw, no stuffing here)
+  // Drive one physical bit time (raw, no stuffing logic here)
   task automatic drive_raw_bit(bit level);
-    // Drive intent immediately at bit start
     drive_tx(level);
-
-    // Hold for a full bit time
     #(bit_time);
   endtask
 
-  // Initialize stuffing counter at SOF (SOF itself not stuffed)
   function void init_stuffing(bit first_bit);
     last_tx_bit = first_bit;
     same_cnt    = 1;
   endfunction
 
-  // Drive one logical bit with optional bit stuffing
-  // Stuffing applies from Arbitration through CRC sequence (per your usage of stuff_en)
   task automatic drive_logical_bit(bit lb);
 
-    // Insert stuff bit if we have already sent 5 identical bits
+    // Insert stuff bit if 5 identical logical bits already sent
     if (stuff_en && (same_cnt == 5)) begin
       bit stuff_bit = ~last_tx_bit;
       drive_raw_bit(stuff_bit);
 
-      // After transmitting stuff bit, it becomes the last bit and count resets
       last_tx_bit = stuff_bit;
       same_cnt    = 1;
     end
@@ -159,7 +147,7 @@ class can_driver extends uvm_driver #(can_transaction);
   endtask
 
   task automatic drive_frame_bit(bit lb);
-    if (crc_en) crc15_update(lb);   // FIXED: no stray semicolon
+    if (crc_en) crc15_update(lb);
     drive_logical_bit(lb);
   endtask
 
@@ -167,10 +155,17 @@ class can_driver extends uvm_driver #(can_transaction);
   // IDLE / BUS ACCESS
   // ===============================================================================================
 
-  // Wait for idle recessive for at least intermission bits (simple)
+  // Wait for idle recessive for at least intermission bits, with timeout protection
   task automatic wait_for_idle_bus();
-    // Wait until bus resolves recessive (idle)
-    wait (vif.rx_i == 1'b1);
+    time start_t = $time;
+
+    // Wait until resolved bus is recessive (idle)
+    while (vif.rx_i !== 1'b1) begin
+      if (($time - start_t) > (bit_time * 200)) begin
+        `uvm_fatal("CAN_DRV", "Timeout waiting for bus to become idle/recessive (rx_i stuck non-1)")
+      end
+      #(bit_time);
+    end
 
     // Enforce intermission bits (typically 3 recessive bits)
     repeat (`CAN_INTERMISSION_BITS) drive_raw_bit(1'b1);
@@ -180,6 +175,13 @@ class can_driver extends uvm_driver #(can_transaction);
   // FRAME TRANSMIT (SOF -> EOF)
   // ===============================================================================================
   task automatic send_frame(can_transaction tr_in);
+
+    // Clamp classic CAN payload rules (Phase A)
+    int unsigned dlc_clamped;
+    int unsigned nbytes;
+
+    dlc_clamped = (tr_in.dlc > 8) ? 8 : tr_in.dlc;
+    nbytes      = (tr_in.data.size() < dlc_clamped) ? tr_in.data.size() : dlc_clamped;
 
     wait_for_idle_bus();
 
@@ -198,55 +200,35 @@ class can_driver extends uvm_driver #(can_transaction);
 
     // ---------------- ARBITRATION FIELD
     if (tr_in.can_fmt == `CAN_ID_STD) begin
-      // 11-bit ID, MSB first: id[10:0]
       for (int i = 10; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
       end
-
-      // RTR: 0=data frame, 1=remote frame
-      drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0);
-
-      // IDE must be 0 for standard frame
-      drive_frame_bit(1'b0);
+      drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
+      drive_frame_bit(1'b0); // IDE=0
     end
     else begin
-      // Extended ID (29-bit): base id[28:18], SRR=1, IDE=1, ext id[17:0], RTR
       for (int i = 28; i >= 18; i--) begin
         drive_frame_bit(tr_in.id[i]);
       end
-
-      // SRR=1 (recessive)
-      drive_frame_bit(1'b1);
-
-      // IDE=1
-      drive_frame_bit(1'b1);
-
-      // Extended ID lower 18 bits
+      drive_frame_bit(1'b1); // SRR=1
+      drive_frame_bit(1'b1); // IDE=1
       for (int i = 17; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
       end
-
-      // RTR bit
-      drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0);
+      drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
     end
 
     // ---------------- CONTROL FIELD (classic CAN)
-    // r0 reserved bit = 0
-    drive_frame_bit(1'b0);
-
-    // DLC [3:0] MSB first
+    drive_frame_bit(1'b0); // r0
     for (int i = 3; i >= 0; i--) begin
-      drive_frame_bit(tr_in.dlc[i]);
+      drive_frame_bit(dlc_clamped[i]); // use clamped DLC on the wire
     end
 
     // ---------------- DATA FIELD
     if (tr_in.f_type == `CAN_DATA_FRAME) begin
-      int nbytes = tr_in.data.size();
-      if (nbytes > 8) nbytes = 8;
-
       for (int bi = 0; bi < nbytes; bi++) begin
         for (int b = 7; b >= 0; b--) begin
-          drive_frame_bit(tr_in.data[bi][b]); // FIXED: use actual data byte
+          drive_frame_bit(tr_in.data[bi][b]);
         end
       end
     end
@@ -254,21 +236,16 @@ class can_driver extends uvm_driver #(can_transaction);
     // ---------------- CRC SEQUENCE + CRC DELIMITER
     crc_stop();
 
-    // Transmit CRC (MSB first)
     for (int i = 14; i >= 0; i--) begin
       drive_frame_bit(crc_reg[i]);
     end
 
-    // Stuffing disabled after CRC sequence
-    stuff_en = 1'b0;
-
-    // CRC delimiter = recessive
-    drive_raw_bit(1'b1);
+    stuff_en = 1'b0;      // disable stuffing after CRC sequence
+    drive_raw_bit(1'b1);  // CRC delimiter
 
     // ---------------- ACK SLOT + ACK DELIMITER
-    // TX sends recessive in ACK slot. Receivers may drive dominant on real bus.
-    drive_raw_bit(1'b1); // ACK slot
-    drive_raw_bit(1'b1); // ACK delimiter
+    drive_raw_bit(1'b1);  // ACK slot (TX releases)
+    drive_raw_bit(1'b1);  // ACK delimiter
 
     // ---------------- EOF (7 recessive bits)
     repeat (7) drive_raw_bit(1'b1);
@@ -277,10 +254,10 @@ class can_driver extends uvm_driver #(can_transaction);
     drive_tx(1'b1);
 
     `uvm_info("CAN_DRV",
-              $sformatf("Sent frame: fmt=%s id=0x%0h type=%0d dlc=%0d bytes=%0d",
+              $sformatf("Sent frame: fmt=%s id=0x%0h type=%0d dlc=%0d (clamped=%0d) bytes_sent=%0d",
                         (tr_in.can_fmt==`CAN_ID_STD) ? "STD" : "EXT",
-                        tr_in.id, tr_in.f_type, tr_in.dlc, tr_in.data.size()),
-              UVM_LOW)
+                        tr_in.id, tr_in.f_type, tr_in.dlc, dlc_clamped, nbytes),
+              UVM_LOW);
   endtask
 
 endclass : can_driver
