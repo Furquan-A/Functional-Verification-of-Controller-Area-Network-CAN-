@@ -19,7 +19,8 @@ interface can_if (
   // Optional CAN clocking (TB convenience)
   clocking can_cb @(posedge clk_i);
     default input #1step output #1step;
-    output rx_i;
+	output tb_tx;
+    input  rx_i;
     input  tx_o, irq_on, bus_off_on, clkout_o;
   endclocking
 

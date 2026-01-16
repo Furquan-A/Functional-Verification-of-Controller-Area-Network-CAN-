@@ -95,7 +95,7 @@ class can_driver extends uvm_driver #(can_transaction);
   task automatic drive_tx(bit level);
     @vif.can_cb;
     // You said you added can_tx to can_if; this assumes it is in can_cb as an output
-    vif.can_cb.can_tx <= level;
+    vif.can_cb.tb_tx[c_cfg.node_id] <= level;
   endtask
 
   // Drive one physical bit time (raw, no stuffing here)
