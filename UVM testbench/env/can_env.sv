@@ -48,12 +48,12 @@ function void can_env :: build_phase (uvm_phase phase);
 		end 
 		
 	if(m_cfg.has_reg_agent)
+		r_agent = new[m_cfg.no_of_reg_agent];
 		begin 
-			r_agent = new[m_cfg.no_of_reg_agent];
 			foreach(r_agent[i])
 				begin 
-					r_agent[i] = reg_agent::type_id::create($sformatf("r_agent[%0d]",i),this);
-					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent[%0d]*",i),"m_cfg",m_cfg.r_cfg[i]);
+					r_agent[i] = reg_agent::type_id::create($sformatf("r_agent%0d",i),this);
+					uvm_config_db#(reg_agent_config)::set(this,$sformatf("r_agent%0d.*",i),"m_cfg",m_cfg.r_cfg[i]);
 				end 
 		end 
 		/*
@@ -83,13 +83,13 @@ function void can_env::connect_phase(uvm_phase phase);
 	if(c_sb != null)
 		begin 
 			foreach(c_agent[i])
-				// Observed CAN frames → scoreboard
-				c_agent[i].mon_ap.connect(c_sb.obs_imp); 
-			foreach(c_agent[i])
-				// Expected CAN frames → scoreboard
-				c_agent[i].drv_ap.connect(c_sb.exp_imp);
+				begin 
+					c_agent[i].mon_ap.connect(c_sb.obs_imp); // observed
+					c_agent[i].drv_ap.connect(c_sb.exp_imp); // expected (what driver sent);
+				end 
 		end 
-		
+	
+/*	
 	if(can_vseqrh != null)
 		begin 
 			foreach(r_agent[i])
@@ -97,7 +97,7 @@ function void can_env::connect_phase(uvm_phase phase);
 			foreach 
 				can_vseqrh.can_sqrs[i] = c_agent[i].cseqrh;
 		end 
-		
+*/		
 endfunction 
 
 // =======================================================================================
