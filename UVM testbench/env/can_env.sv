@@ -37,12 +37,13 @@ function void can_env :: build_phase (uvm_phase phase);
 		`uvm_fatal("ENV CONFIG","cannot get() the config from the config_db. did you set() it ?")
 	
 	if(m_cfg.has_can_agent)
+		c_agent = new[m_cfg.no_of_can_agent];
 		begin 
-			c_agent = new[m_cfg.no_of_can_agent];
 			foreach(c_agent[i])
 				begin 
-					c_agent[i] = can_agent::type_id::create($sformatf("c_agent[%0d]",i),this);
-					uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent[%0d]*",i),"m_cfg",m_cfg.c_cfg[i]);
+					c_agent[i] = can_agent::type_id::create($sformatf("c_agent%0d",i),this);
+					// set per-agent config into that agent scope ( and its children )
+					uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent%0d.*",i),"m_cfg",m_cfg.c_cfg[i]);
 				end 
 		end 
 		
