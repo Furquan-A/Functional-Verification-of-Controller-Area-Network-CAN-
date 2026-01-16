@@ -55,6 +55,8 @@ endclass : can_std_smoke_tx_seq
 
 `include "uvm_macros.svh"
 import uvm_pkg::*;
+import can_pkg::*;
+
 
 class can_ext_smoke_tx_seq extends uvm_sequence #(can_transaction);
 	`uvm_object_utils(can_ext_smoke_tx_seq)
