@@ -40,9 +40,6 @@ module can_top_tb;
   // Use '1 as recessive default. Any node driving 0 forces bus to 0.
   localparam int unsigned NUM_TB_NODES = 2;  // <--- change as you like
 
-  // Each TB node drives one element: 1=recessive, 0=dominant
-  logic [NUM_TB_NODES-1:0] tb_can_tx;
-
   // Resolved bus and a combined vector including DUT
   logic can_bus;
   logic [NUM_TB_NODES:0] can_tx_all; // [0]=DUT, [1..]=TB nodes
@@ -54,7 +51,7 @@ module can_top_tb;
   always_comb begin
     can_tx_all[0] = vif.tx_o; // DUT drives the bus
     for (int i = 0; i < NUM_TB_NODES; i++) begin
-      can_tx_all[i+1] = tb_can_tx[i];
+      can_tx_all[i+1] = vif.tb_tx[i];
     end
   end
 
