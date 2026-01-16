@@ -5,7 +5,7 @@ interface can_if (
  ,input  logic wb_clk_i
 `endif
 );
-
+  logic tb_tx; // driven by agent, participates in top_bus bus AND 
   // ====== CAN pins (common) ======
   logic rx_i;          // to DUT (bus -> DUT)
   logic tx_o;          // from DUT (DUT -> bus)

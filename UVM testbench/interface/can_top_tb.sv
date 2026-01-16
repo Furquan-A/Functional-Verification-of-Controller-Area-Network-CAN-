@@ -23,10 +23,6 @@ module can_top_tb;
 `endif
   );
 
-  // ----------- Safe CAN default -----------
-  // Recessive level on CAN bus is '1'
-  initial vif.rx_i = 1'b1;
-
   // ---------------- Reset -----------------
   initial begin
 `ifdef CAN_WISHBONE_IF
