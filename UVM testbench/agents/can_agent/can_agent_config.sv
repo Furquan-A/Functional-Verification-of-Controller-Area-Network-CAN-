@@ -4,7 +4,7 @@
 `include "uvm_macros.svh"
 //`include "can_defines.sv"
 
-//import uvm_pkg::*;
+import uvm_pkg::*;
 
 class can_agent_config extends uvm_object;
 
