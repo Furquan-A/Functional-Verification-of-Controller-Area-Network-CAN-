@@ -13,7 +13,7 @@ class can_agent_config extends uvm_object;
 	// agent mode (active or passive)
 	uvm_active_passive_enum is_active = UVM_ACTIVE;
 	
-	// vrtual can interface 
+	// virtual can interface 
 	virtual can_if vif;
 	
 	// logic node identifier 
@@ -53,7 +53,7 @@ class can_agent_config extends uvm_object;
 	
 	// fine grain error types 
 	bit inject_crc_error = 1'b0;
-	bit inject_stuff_error = 1'b0;;
+	bit inject_stuff_error = 1'b0;
 	bit inject_form_error = 1'b1;
 	bit inject_ack_error = 1'b0;
 	
@@ -66,7 +66,7 @@ class can_agent_config extends uvm_object;
 	bit trace_enable = 1'b0;
 	
 	// verbose bit-level tracing ( very noisy)
-	bit bit_trace_encable = 1'b0;
+	bit bit_trace_enable = 1'b0;
 	
 	// ===== Contructor ======================================
 	

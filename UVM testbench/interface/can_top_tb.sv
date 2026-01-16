@@ -45,7 +45,7 @@ module can_top_tb;
   logic [NUM_TB_NODES:0] can_tx_all; // [0]=DUT, [1..]=TB nodes
 
   // Default TB nodes to recessive (released bus)
-  initial tb_can_tx = '1;
+  initial vif.tb_tx = '1;
 
   // Combine all drivers (wired-AND)
   always_comb begin
