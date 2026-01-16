@@ -1,13 +1,13 @@
 // can_if.sv — unified interface for Wishbone or Legacy (select via +define+CAN_WISHBONE_IF)
-interface can_if (
+interface can_if #(
+  parameter int unsigned NUM_TB_NODES = 2
+)(
   input  logic clk_i
 `ifdef CAN_WISHBONE_IF
  ,input  logic wb_clk_i
 `endif
 );
 
-
-  int unsigned NUM_TB_NODES = 2;
   logic [NUM_TB_NODES-1:0] tb_tx; // driven by agent, participates in top_bus bus AND 
   // ====== CAN pins (common) ======
   logic rx_i;          // to DUT (bus -> DUT)
@@ -152,7 +152,7 @@ interface can_if (
     output wb_dat_o, wb_ack_o, tx_o, irq_on, bus_off_on, clkout_o
   );
   // TB driver (Wishbone)
-  modport wb_master (clocking wb_cb, output rx_i, input tx_o, irq_on, bus_off_on, clkout_o);
+  modport wb_master (clocking wb_cb, input rx_i, input tx_o, irq_on, bus_off_on, clkout_o);
 `else
   // DUT hookup (Legacy)
   modport dut_legacy (
@@ -161,7 +161,7 @@ interface can_if (
     output tx_o, irq_on, bus_off_on, clkout_o
   );
   // TB driver (Legacy)
-  modport lg_host (clocking lg_cb, output rx_i, input tx_o, irq_on, bus_off_on, clkout_o);
+  modport lg_host (clocking lg_cb, input rx_i, input tx_o, irq_on, bus_off_on, clkout_o);
 `endif
 
   // Passive monitor modport (common + per-bus)
