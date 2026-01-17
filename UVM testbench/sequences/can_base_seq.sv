@@ -1,1 +1,0 @@
-class can_base_seq extends uvm_items;

@@ -2,7 +2,7 @@
 `define CAN_TX_SEQ_SV
 
 // NOTE: This file is `include'd inside can_pkg.sv
-// ????: no imports, no `include "uvm_macros.svh" here.
+// لذلك: no imports, no `include "uvm_macros.svh" here.
 
 class can_std_smoke_tx_seq extends uvm_sequence #(can_transaction);
   `uvm_object_utils(can_std_smoke_tx_seq)

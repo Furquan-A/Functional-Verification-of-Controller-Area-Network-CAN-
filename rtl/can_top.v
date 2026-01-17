@@ -209,7 +209,7 @@
 // synopsys translate_off
 `include "timescale.v"
 // synopsys translate_on
-`include "can_defines.v"
+//`include "can_defines.v"
 
 module can_top
 ( 

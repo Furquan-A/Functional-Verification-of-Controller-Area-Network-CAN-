@@ -12,7 +12,7 @@ class can_env_config extends uvm_object;
   int unsigned no_of_reg_agent = 0;
 
   can_agent_config c_cfg[];
-  reg_agent_config r_cfg[];
+  //reg_agent_config r_cfg[];
 
   virtual can_if vif;
 
@@ -26,7 +26,7 @@ class can_env_config extends uvm_object;
   function void resize(int unsigned n_can, int unsigned n_reg);
 
     no_of_can_agent = n_can;
-    no_of_reg_agent = n_reg;
+   // no_of_reg_agent = n_reg;
 
     // ---------------- CAN agent configs ----------------
     if (has_can_agent) begin
@@ -39,13 +39,13 @@ class can_env_config extends uvm_object;
     end
 
     // ---------------- REG agent configs ----------------
-    if (has_reg_agent) begin
-      r_cfg = new[no_of_reg_agent];
-      foreach (r_cfg[i]) begin
-        r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg_%0d", i));
-        r_cfg[i].vif = vif;
-      end
-    end
+   // if (has_reg_agent) begin
+    //  r_cfg = new[no_of_reg_agent];
+    //  foreach (r_cfg[i]) begin
+      //  r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg_%0d", i));
+      //  r_cfg[i].vif = vif;
+     // end
+    //end
   endfunction : resize
 
   // --------------------------------------------------------------------------
@@ -58,10 +58,10 @@ class can_env_config extends uvm_object;
       return 0;
     end
 
-    if (has_reg_agent && (r_cfg.size() != no_of_reg_agent)) begin
-      why = "r_cfg size mismatch";
-      return 0;
-    end
+   // if (has_reg_agent && (r_cfg.size() != no_of_reg_agent)) begin
+    //  why = "r_cfg size mismatch";
+    //  return 0;
+   // end
 
     if (has_can_agent) begin
       foreach (c_cfg[i]) begin
@@ -76,14 +76,14 @@ class can_env_config extends uvm_object;
       end
     end
 
-    if (has_reg_agent) begin
-      foreach (r_cfg[i]) begin
-        if (r_cfg[i].vif == null) begin
-          why = $sformatf("r_cfg[%0d].vif is null", i);
-          return 0;
-        end
-      end
-    end
+    //if (has_reg_agent) begin
+    //  foreach (r_cfg[i]) begin
+     //   if (r_cfg[i].vif == null) begin
+      //    why = $sformatf("r_cfg[%0d].vif is null", i);
+      //    return 0;
+      //  end
+     // end
+   // end
 
     return 1;
   endfunction : validate

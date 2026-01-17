@@ -4,7 +4,7 @@ class can_env extends uvm_env;
 
   // AGENTS
   can_agent  c_agent[];
-  reg_agent  r_agent[];
+ // reg_agent  r_agent[];
 
   can_scoreboard  c_sb;
   // can_virtual_sequencer can_vseqrh; // enable later when you’re ready
@@ -16,6 +16,8 @@ class can_env extends uvm_env;
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+    
+   // `uvm_info("ENV", $sformatf("Setting cfg for %s", c_agent[i].get_full_name()), UVM_LOW)
 
     if (!uvm_config_db#(can_env_config)::get(this, "", "can_env_config", m_cfg))
       `uvm_fatal("ENV_CFG", "Cannot get can_env_config from config_db (key='can_env_config')")
@@ -29,31 +31,25 @@ class can_env extends uvm_env;
         c_agent[i] = can_agent::type_id::create($sformatf("c_agent%0d", i), this);
 
         // Set per-agent config into that agent scope (and its children)
-        uvm_config_db#(can_agent_config)::set(
-          this,
-          $sformatf("c_agent%0d.*", i),
-          "m_cfg",
-          m_cfg.c_cfg[i]
-        );
+        uvm_config_db#(can_agent_config)::set(this,$sformatf("c_agent%0d", i),"m_cfg",m_cfg.c_cfg[i]);
       end
     end
 
     // ---------------- REG agents ----------------
-    if (m_cfg.has_reg_agent) begin
-      r_agent = new[m_cfg.no_of_reg_agent];
+    //if (m_cfg.has_reg_agent) begin
+     // r_agent = new[m_cfg.no_of_reg_agent];
 
-      foreach (r_agent[i]) begin
-        r_agent[i] = reg_agent::type_id::create($sformatf("r_agent%0d", i), this);
+      //foreach (r_agent[i]) begin
+       // r_agent[i] = reg_agent::type_id::create($sformatf("r_agent%0d", i), this);
 
-        uvm_config_db#(reg_agent_config)::set(
-          this,
-          $sformatf("r_agent%0d.*", i),
-          "m_cfg",
-          m_cfg.r_cfg[i]
-        );
-      end
-    end
-
+        //uvm_config_db#(reg_agent_config)::set(
+        //  this,
+        //  $sformatf("r_agent%0d.*", i),
+         // "m_cfg",
+         // m_cfg.r_cfg[i]
+       // );
+     // end
+  //  end
     // ---------------- Scoreboard ----------------
     if (m_cfg.has_can_scoreboard) begin
       c_sb = can_scoreboard::type_id::create("c_sb", this);

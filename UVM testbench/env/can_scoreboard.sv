@@ -1,10 +1,11 @@
 `ifndef CAN_SCOREBOARD_SV
 `define CAN_SCOREBOARD_SV
 
-`include "uvm_macros.svh"
+//`include "uvm_macros.svh"
 import uvm_pkg::*;
-import can_pkg::*; // so can_transaction + analysis_imp decls are visible
-
+//import can_pkg::*; // so can_transaction + analysis_imp decls are visible
+`uvm_analysis_imp_decl(_exp)
+`uvm_analysis_imp_decl(_obs)
 class can_scoreboard extends uvm_component;
   `uvm_component_utils(can_scoreboard)
 
@@ -37,27 +38,38 @@ class can_scoreboard extends uvm_component;
     compare_if_ready();
   endfunction
 
-  function void compare_if_ready();
-    can_transaction exp;
-    can_transaction obs;
+ function void compare_if_ready();
+  can_transaction exp;
+  can_transaction obs;
+  bit ok;
+  string msg;
 
-    if (exp_q.size() == 0 || obs_q.size() == 0)
-      return;
+  if (exp_q.size() == 0 || obs_q.size() == 0)
+    return;
 
-    exp = exp_q.pop_front();
-    obs = obs_q.pop_front(); // FIXED
+  exp = exp_q.pop_front();
+  obs = obs_q.pop_front();
 
-    if (compare_txn(exp, obs)) begin
-      pass_count++;
-      `uvm_info("CAN_SB", "CAN FRAME MATCHED", UVM_LOW);
-    end
-    else begin
-      fail_count++;
-      `uvm_error("CAN_SB",
-                 $sformatf("CAN FRAME MISMATCH\n  EXP: %s\n  OBS: %s",
-                           exp.convert2string(), obs.convert2string()));
-    end
-  endfunction
+  ok = compare_txn(exp, obs);
+
+  msg = $sformatf("TIME=%0t | EXP=%s | OBS=%s | RESULT=%s",
+                $time,
+                exp.convert2string(),
+                obs.convert2string(),
+                ok ? "PASS" : "FAIL");
+  `uvm_info("CAN_SB_TXN", msg, UVM_LOW);
+
+
+  if (ok) begin
+    pass_count++;
+  end
+  else begin
+    fail_count++;
+    `uvm_error("CAN_SB", "CAN FRAME MISMATCH (see CAN_SB_TXN block above)")
+  end
+endfunction
+
+
 
   function bit compare_txn(can_transaction exp, can_transaction obs);
     if (exp.can_fmt != obs.can_fmt) return 0;

@@ -103,9 +103,10 @@ class can_transaction extends uvm_sequence_item;
   endfunction
 
   function void do_print(uvm_printer printer);
+    string ft;
     super.do_print(printer);
 
-    string ft;
+    
     case (f_type)
       `CAN_DATA_FRAME:     ft = "DATA";
       `CAN_REMOTE_FRAME:   ft = "REMOTE";

@@ -13,6 +13,7 @@ class can_sequencer extends uvm_sequencer #(can_transaction) ;
 	
 endclass 
 
+
 function can_sequencer :: new(string name = "can_sequencer",uvm_component parent);
 	super.new(name,parent);
 endfunction 
@@ -22,5 +23,4 @@ function void can_sequencer :: build_phase(uvm_phase phase);
 	
 	`uvm_info(get_full_name(), "Inside Build_phase", UVM_LOW)
 endfunction 
-
 `endif
