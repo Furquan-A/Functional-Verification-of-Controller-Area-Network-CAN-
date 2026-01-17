@@ -49,7 +49,7 @@ module can_top_tb;
 
   // Combine all drivers (wired-AND)
   always_comb begin
-    can_tx_all[0] = 1'b1; // (dut ignored for the smoke test) vif.tx_o; // DUT drives the bus
+    can_tx_all[0] =  vif.tx_o; // DUT drives the bus
     for (int i = 0; i < NUM_TB_NODES; i++) begin
       can_tx_all[i+1] = vif.tb_tx[i];
     end

@@ -65,12 +65,15 @@ class can_env extends uvm_env;
     super.connect_phase(phase);
 
     // Connect analysis ports to scoreboard
-    if (c_sb != null) begin
-      foreach (c_agent[i]) begin
-        c_agent[i].mon_ap.connect(c_sb.obs_imp); // observed
-        c_agent[i].drv_ap.connect(c_sb.exp_imp); // expected (what driver sent)
+    if (c_sb != null) 
+      begin
+      // expected from TX node only 
+      c_agent[0].drv_ap.connect(c_sb.exp_imp);
+      
+      // observer from the single monitor ( pick node0 for now)
+      c_agent[0].mon_ap.connect(c_sb.obs_imp); // only one monitor should share the obs data with sb if not the sb// gets two obs data and one exp data which will create a mismatch 
       end
-    end
+    
 
     // Enable later when you actually create can_vseqrh and define arrays inside it
     // if (can_vseqrh != null) begin
