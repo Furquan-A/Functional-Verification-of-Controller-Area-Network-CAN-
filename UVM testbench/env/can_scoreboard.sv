@@ -48,35 +48,46 @@ class can_scoreboard extends uvm_component;
 
 
  function void compare_if_ready();
-  can_transaction exp;
-  can_transaction obs;
-  bit ok;
-  string msg;
+	  can_transaction exp;
+	  bit ok_all;
 
-  if (exp_q.size() == 0 || obs_q.size() == 0)
-    return;
+	  if (exp_q.size() == 0)
+		return;
 
-  exp = exp_q.pop_front();
-  obs = obs_q.pop_front();
+	  // Wait until every node has at least one observed frame
+	  for (int unsigned n = 0; n < num_nodes; n++) begin
+		if (!obs_q_by_node.exists(n) || (obs_q_by_node[n].size() == 0))
+		  return;
+	  end
 
-  ok = compare_txn(exp, obs);
+	  exp = exp_q.pop_front();
 
-  msg = $sformatf("TIME=%0t | EXP=%s | OBS=%s | RESULT=%s",
-                $time,
-                exp.convert2string(),
-                obs.convert2string(),
-                ok ? "PASS" : "FAIL");
-  `uvm_info("CAN_SB_TXN", msg, UVM_LOW);
+	  ok_all = 1;
+	  for (int unsigned n = 0; n < num_nodes; n++) begin
+		can_transaction obs;
+		bit ok;
 
+		obs = obs_q_by_node[n].pop_front();
+		ok  = compare_txn(exp, obs);
 
-  if (ok) begin
-    pass_count++;
-  end
-  else begin
-    fail_count++;
-    `uvm_error("CAN_SB", "CAN FRAME MISMATCH (see CAN_SB_TXN block above)")
-  end
-endfunction
+		if (!ok) ok_all = 0;
+
+		`uvm_info("CAN_SB_TXN",
+		  $sformatf("EXP vs OBS(node%0d): %s | %s | %s",
+					n,
+					exp.convert2string(),
+					obs.convert2string(),
+					ok ? "PASS" : "FAIL"),
+		  UVM_LOW)
+	  end
+
+	  if (ok_all) pass_count++;
+	  else begin
+		fail_count++;
+		`uvm_error("CAN_SB", "Multi-node compare FAILED (see CAN_SB_TXN lines)")
+	  end
+  endfunction
+
 
 
 
