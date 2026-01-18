@@ -15,7 +15,9 @@ class can_scoreboard extends uvm_component;
 
   // queues
   can_transaction exp_q[$];
-  can_transaction obs_q[$];
+  can_transaction obs_q_by_node[int unsigned][$];
+  int unsigned num_nodes = 1;
+
 
   int pass_count;
   int fail_count;
@@ -25,6 +27,12 @@ class can_scoreboard extends uvm_component;
     exp_imp = new("exp_imp", this);
     obs_imp = new("obs_imp", this);
   endfunction
+  
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    void'(uvm_config_db#(int unsigned)::get(this, "", "num_nodes", num_nodes));
+  endfunction
+
 
   function void write_exp(can_transaction tr);
     exp_q.push_back(tr);
