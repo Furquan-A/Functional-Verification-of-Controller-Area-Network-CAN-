@@ -76,6 +76,7 @@ class can_driver extends uvm_driver #(can_transaction);
       tr_local.t_start = $time;
 
       // default arbitration outcome
+	  tr_local.src_node     = c_cfg.node_id;
       tr_local.arb_lost     = 1'b0;
       tr_local.arb_lost_bit = 0;
 
@@ -242,6 +243,11 @@ class can_driver extends uvm_driver #(can_transaction);
       // SOF loss is unlikely here but handle anyway
       tr_in.arb_lost     = 1'b1;
       tr_in.arb_lost_bit = arb_bit_idx;
+	  
+	  `uvm_info("CAN_ARB",
+            $sformatf("[LOSS] node%0d lost arbitration at arb_bit=%0d (id=0x%0h) -> released bus",
+                      c_cfg.node_id, tr_in.arb_lost_bit, tr_in.id),
+            UVM_LOW);
       wait_frame_end_after_loss();
       return;
     end
@@ -259,31 +265,32 @@ class can_driver extends uvm_driver #(can_transaction);
     if (tr_in.can_fmt == `CAN_ID_STD) begin
       for (int i = 10; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
-        if (lost_arbitration) goto LOST;
+        if (lost_arbitration) return;
+		
       end
       drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
-      if (lost_arbitration) goto LOST;
+      if (lost_arbitration) return;
 
       drive_frame_bit(1'b0); // IDE=0
-      if (lost_arbitration) goto LOST;
+      if (lost_arbitration) return;
     end
     else begin
       for (int i = 28; i >= 18; i--) begin
         drive_frame_bit(tr_in.id[i]);
-        if (lost_arbitration) goto LOST;
+        if (lost_arbitration) return;
       end
       drive_frame_bit(1'b1); // SRR=1
-      if (lost_arbitration) goto LOST;
+      if (lost_arbitration) return ;
 
       drive_frame_bit(1'b1); // IDE=1
-      if (lost_arbitration) goto LOST;
+      if (lost_arbitration) return;
 
       for (int i = 17; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
-        if (lost_arbitration) goto LOST;
+        if (lost_arbitration) return;
       end
       drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
-      if (lost_arbitration) goto LOST;
+      if (lost_arbitration) return;
     end
 
     // Arbitration done after RTR/IDE bits
@@ -322,7 +329,11 @@ class can_driver extends uvm_driver #(can_transaction);
     repeat (7) drive_raw_bit(1'b1);
 
     drive_tx(1'b1);
-
+	
+	`uvm_info("CAN_ARB",
+          $sformatf("[WIN ] node%0d won arbitration and completed TX (id=0x%0h)",
+                    c_cfg.node_id, tr_in.id),
+          UVM_LOW);
     `uvm_info("CAN_DRV",
               $sformatf("TX DONE: node=%0d fmt=%s id=0x%0h dlc=%0d (clamped=%0d) bytes_sent=%0d",
                         c_cfg.node_id,
