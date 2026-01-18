@@ -41,10 +41,11 @@ class can_scoreboard extends uvm_component;
   endfunction
 
   function void write_obs(can_transaction tr);
-    obs_q.push_back(tr);
-    `uvm_info("CAN_SB", $sformatf("Observed frame queued (ID=0x%0h)", tr.id), UVM_LOW);
-    compare_if_ready();
+	  obs_q_by_node[tr.src_node].push_back(tr);
+	  `uvm_info("CAN_SB", $sformatf("OBS queued from node%0d id=0x%0h", tr.src_node, tr.id), UVM_LOW)
+	  compare_if_ready();
   endfunction
+
 
  function void compare_if_ready();
   can_transaction exp;
