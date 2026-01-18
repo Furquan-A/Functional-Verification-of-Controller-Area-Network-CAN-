@@ -29,7 +29,7 @@ class can_smoke_test extends uvm_test;
     env_cfg.c_cfg[0].vif       = vif;
     
     //Nde 1: Passive observer for now ( we will add ack later)
-    env_cfg.c_cfg[1].is_active  = UVM_PASSIVE;
+    env_cfg.c_cfg[1].is_active  = UVM_ACTIVE;
     env_cfg.c_cfg[1].node_id   = 1;
     env_cfg.c_cfg[0].vif       = vif;
     
