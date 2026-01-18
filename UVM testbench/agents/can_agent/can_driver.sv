@@ -4,18 +4,12 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-// If you compile via can_pkg.sv with correct order, prefer: import can_pkg::*; and remove includes below.
-// Keeping them here only if you compile this file standalone.
-//`include "can_defines.sv"
-//`include "can_transaction.sv"
-//`include "can_agent_config.sv"
-
 //--------------------------------------------------------------------------------------------------
-// can_driver (Phase-A ready)
+// can_driver (Phase-B Arbitration, Option-2)
 // - Drives node transmit intent via vif.can_cb.tb_tx[node_id]
-// - Does NOT drive vif.rx_i (bus model drives rx_i)
-// - Adds idle-bus timeout to avoid infinite hang
-// - Clamps DLC/bytes to classic CAN max (8)
+// - Samples vif.rx_i at sample point during arbitration field
+// - Detects arbitration loss: sent recessive(1) but saw dominant(0)
+// - On loss: releases bus immediately, marks tr_in.arb_lost, stops TX, waits frame end
 //--------------------------------------------------------------------------------------------------
 class can_driver extends uvm_driver #(can_transaction);
   `uvm_component_utils(can_driver)
@@ -34,14 +28,15 @@ class can_driver extends uvm_driver #(can_transaction);
   bit          last_tx_bit;
   int unsigned same_cnt;
 
-  // CRC (kept as-is for now)
+  // Arbitration flags
+  bit in_arbitration;
+  bit lost_arbitration;
+  int unsigned arb_bit_idx; // counts arbitration bits (logical bits)
+
+  // CRC
   bit        crc_en;
   bit [14:0] crc_reg;
   localparam bit [14:0] CAN_CRC15_POLY = 15'h4599;
-  
-   //Arbitrationn Flags 
-  bit in_arbitration;
-  bit lost_arbitration;
 
   function new(string name = "can_driver", uvm_component parent = null);
     super.new(name, parent);
@@ -60,6 +55,9 @@ class can_driver extends uvm_driver #(can_transaction);
     bit_time  = c_cfg.bit_time_ns * 1ns;
     sp_offset = (c_cfg.bit_time_ns * c_cfg.sample_point_pct * 1ns) / 100;
 
+    if (sp_offset >= bit_time)
+      `uvm_fatal("CAN_DRV", "sample_point_pct makes sp_offset >= bit_time (invalid)")
+
     `uvm_info("CAN_DRV",
               $sformatf("Driver ready: node_id=%0d bit_time=%0t sp_offset=%0t (%0d%%)",
                         c_cfg.node_id, bit_time, sp_offset, c_cfg.sample_point_pct),
@@ -69,17 +67,23 @@ class can_driver extends uvm_driver #(can_transaction);
   task run_phase(uvm_phase phase);
     can_transaction tr_local;
 
-    // Release bus (recessive) by default
+    // Release bus by default
     drive_tx(1'b1);
 
     forever begin
       seq_item_port.get_next_item(tr_local);
 
       tr_local.t_start = $time;
-      send_frame(tr_local);
-      tr_local.t_end   = $time;
 
-      // Optional: publish what we drove (expected stream)
+      // default arbitration outcome
+      tr_local.arb_lost     = 1'b0;
+      tr_local.arb_lost_bit = 0;
+
+      send_frame(tr_local);
+
+      tr_local.t_end = $time;
+
+      // publish what we attempted (scoreboard can ignore arb_lost==1)
       ap.write(tr_local);
 
       seq_item_port.item_done();
@@ -90,17 +94,35 @@ class can_driver extends uvm_driver #(can_transaction);
   // BUS DRIVER PRIMITIVES
   // ===============================================================================================
 
-  // Drive THIS NODE'S tx intent into the TB bus model.
-  // 1 = recessive (release), 0 = dominant (drive)
   task automatic drive_tx(bit level);
     @vif.can_cb;
     vif.can_cb.tb_tx[c_cfg.node_id] <= level;
   endtask
 
-  // Drive one physical bit time (raw, no stuffing logic here)
+  // Drive one physical bit and optionally check arbitration at sample point.
+  // - If in_arbitration and we lose, sets lost_arbitration and releases bus.
   task automatic drive_raw_bit(bit level);
+    bit bus_sample;
+
+    // Drive at start of bit time
     drive_tx(level);
-    #(bit_time);
+
+    // Sample at sample point
+    #(sp_offset);
+    bus_sample = vif.rx_i;
+
+    if (in_arbitration && !lost_arbitration) begin
+      // Arbitration loss condition: we sent 1 but bus is 0
+      if ((level === 1'b1) && (bus_sample === 1'b0)) begin
+        lost_arbitration = 1'b1;
+        // release immediately
+        drive_tx(1'b1);
+      end
+      arb_bit_idx++;
+    end
+
+    // Finish bit time
+    #(bit_time - sp_offset);
   endtask
 
   function void init_stuffing(bit first_bit);
@@ -110,19 +132,21 @@ class can_driver extends uvm_driver #(can_transaction);
 
   task automatic drive_logical_bit(bit lb);
 
-    // Insert stuff bit if 5 identical logical bits already sent
+    // Insert stuff bit if needed
     if (stuff_en && (same_cnt == 5)) begin
       bit stuff_bit = ~last_tx_bit;
       drive_raw_bit(stuff_bit);
+
+      // If we lost arbitration while sending stuff bit, stop immediately
+      if (lost_arbitration) return;
 
       last_tx_bit = stuff_bit;
       same_cnt    = 1;
     end
 
-    // Drive the actual logical bit
     drive_raw_bit(lb);
+    if (lost_arbitration) return;
 
-    // Update run-length tracking
     if (lb == last_tx_bit) begin
       same_cnt++;
     end
@@ -159,73 +183,116 @@ class can_driver extends uvm_driver #(can_transaction);
   // IDLE / BUS ACCESS
   // ===============================================================================================
 
-  // Wait for idle recessive for at least intermission bits, with timeout protection
   task automatic wait_for_idle_bus();
     time start_t = $time;
 
-    // Wait until resolved bus is recessive (idle)
     while (vif.rx_i !== 1'b1) begin
       if (($time - start_t) > (bit_time * 200)) begin
-        `uvm_fatal("CAN_DRV", "Timeout waiting for bus to become idle/recessive (rx_i stuck non-1)")
+        `uvm_fatal("CAN_DRV", "Timeout waiting for bus idle/recessive (rx_i stuck non-1)")
       end
       #(bit_time);
     end
 
-    // Enforce intermission bits (typically 3 recessive bits)
     repeat (`CAN_INTERMISSION_BITS) drive_raw_bit(1'b1);
   endtask
 
+  // Wait until current frame ends (simple heuristic):
+  // wait for 7 consecutive recessive bits (EOF) after we've lost arbitration.
+  task automatic wait_frame_end_after_loss();
+    int unsigned recessive_cnt = 0;
+    bit b;
+
+    // We assume we're already inside a frame. Track raw bits on bus.
+    while (recessive_cnt < 7) begin
+      // sample each bit at sample point
+      #(sp_offset);
+      b = vif.rx_i;
+      #(bit_time - sp_offset);
+
+      if (b === 1'b1) recessive_cnt++;
+      else recessive_cnt = 0;
+    end
+
+    // After EOF, bus will go idle; we keep released.
+    drive_tx(1'b1);
+  endtask
+
   // ===============================================================================================
-  // FRAME TRANSMIT (SOF -> EOF)
+  // FRAME TRANSMIT (SOF -> EOF) with arbitration support
   // ===============================================================================================
   task automatic send_frame(can_transaction tr_in);
 
-    // Clamp classic CAN payload rules (Phase A)
     int unsigned dlc_clamped;
     int unsigned nbytes;
 
     dlc_clamped = (tr_in.dlc > 8) ? 8 : tr_in.dlc;
     nbytes      = (tr_in.data.size() < dlc_clamped) ? tr_in.data.size() : dlc_clamped;
 
+    // reset arbitration tracking for this frame attempt
+    in_arbitration    = 1'b0;
+    lost_arbitration  = 1'b0;
+    arb_bit_idx       = 0;
+
     wait_for_idle_bus();
 
     // ---------------- SOF (dominant 0, not stuffed)
     stuff_en = 1'b0;
     drive_raw_bit(1'b0);
+    if (lost_arbitration) begin
+      // SOF loss is unlikely here but handle anyway
+      tr_in.arb_lost     = 1'b1;
+      tr_in.arb_lost_bit = arb_bit_idx;
+      wait_frame_end_after_loss();
+      return;
+    end
 
     init_stuffing(1'b0);
 
-    // Start CRC and include SOF as first bit (as you intended)
     crc_start();
     crc15_update(1'b0);
 
-    // Enable bit stuffing up to end of CRC sequence
     stuff_en = 1'b1;
 
-    // ---------------- ARBITRATION FIELD
+    // ---------------- ARBITRATION FIELD (enable arbitration checking)
+    in_arbitration = 1'b1;
+
     if (tr_in.can_fmt == `CAN_ID_STD) begin
       for (int i = 10; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
+        if (lost_arbitration) goto LOST;
       end
       drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
+      if (lost_arbitration) goto LOST;
+
       drive_frame_bit(1'b0); // IDE=0
+      if (lost_arbitration) goto LOST;
     end
     else begin
       for (int i = 28; i >= 18; i--) begin
         drive_frame_bit(tr_in.id[i]);
+        if (lost_arbitration) goto LOST;
       end
       drive_frame_bit(1'b1); // SRR=1
+      if (lost_arbitration) goto LOST;
+
       drive_frame_bit(1'b1); // IDE=1
+      if (lost_arbitration) goto LOST;
+
       for (int i = 17; i >= 0; i--) begin
         drive_frame_bit(tr_in.id[i]);
+        if (lost_arbitration) goto LOST;
       end
       drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
+      if (lost_arbitration) goto LOST;
     end
+
+    // Arbitration done after RTR/IDE bits
+    in_arbitration = 1'b0;
 
     // ---------------- CONTROL FIELD (classic CAN)
     drive_frame_bit(1'b0); // r0
     for (int i = 3; i >= 0; i--) begin
-      drive_frame_bit(dlc_clamped[i]); // use clamped DLC on the wire
+      drive_frame_bit(dlc_clamped[i]);
     end
 
     // ---------------- DATA FIELD
@@ -244,24 +311,42 @@ class can_driver extends uvm_driver #(can_transaction);
       drive_frame_bit(crc_reg[i]);
     end
 
-    stuff_en = 1'b0;      // disable stuffing after CRC sequence
+    stuff_en = 1'b0;
     drive_raw_bit(1'b1);  // CRC delimiter
 
     // ---------------- ACK SLOT + ACK DELIMITER
-    drive_raw_bit(1'b1);  // ACK slot (TX releases)
+    drive_raw_bit(1'b1);  // ACK slot
     drive_raw_bit(1'b1);  // ACK delimiter
 
-    // ---------------- EOF (7 recessive bits)
+    // ---------------- EOF (7 recessive)
     repeat (7) drive_raw_bit(1'b1);
 
-    // Release to recessive idle
     drive_tx(1'b1);
 
     `uvm_info("CAN_DRV",
-              $sformatf("Sent frame: fmt=%s id=0x%0h type=%0d dlc=%0d (clamped=%0d) bytes_sent=%0d",
+              $sformatf("TX DONE: node=%0d fmt=%s id=0x%0h dlc=%0d (clamped=%0d) bytes_sent=%0d",
+                        c_cfg.node_id,
                         (tr_in.can_fmt==`CAN_ID_STD) ? "STD" : "EXT",
-                        tr_in.id, tr_in.f_type, tr_in.dlc, dlc_clamped, nbytes),
+                        tr_in.id, tr_in.dlc, dlc_clamped, nbytes),
               UVM_LOW);
+    return;
+
+  LOST:
+    // Arbitration loss handling
+    tr_in.arb_lost     = 1'b1;
+    tr_in.arb_lost_bit = arb_bit_idx;
+
+    // release and wait for winner frame to finish
+    drive_tx(1'b1);
+
+    `uvm_info("CAN_ARB",
+              $sformatf("Node%0d LOST arbitration at arb_bit=%0d (released bus). id=0x%0h",
+                        c_cfg.node_id, tr_in.arb_lost_bit, tr_in.id),
+              UVM_LOW);
+
+    wait_frame_end_after_loss();
+    return;
+
   endtask
 
 endclass : can_driver
