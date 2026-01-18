@@ -70,8 +70,9 @@ class can_env extends uvm_env;
       // expected from TX node only 
       c_agent[0].drv_ap.connect(c_sb.exp_imp);
       
-      // observer from the single monitor ( pick node0 for now)
-      c_agent[0].mon_ap.connect(c_sb.obs_imp); // only one monitor should share the obs data with sb if not the sb// gets two obs data and one exp data which will create a mismatch 
+     
+     foreach (c_agent[i])
+      c_agent[i].mon_ap.connect(c_sb.obs_imp);
       end
     
 
