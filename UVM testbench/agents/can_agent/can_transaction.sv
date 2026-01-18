@@ -23,6 +23,10 @@ class can_transaction extends uvm_sequence_item;
   time        t_start;
   time        t_end;
   bit [14:0]  crc_obs;
+  int unsigned src_node; // which node produced this txn (monitor or driver)
+  bit arb_lost;              // 1 if this node lost arbitration
+  int unsigned arb_lost_bit; // at which arbitration bit index it lost (for debug)
+
 
   // ------- Automation / Printing --------------------------------------
   `uvm_object_utils_begin(can_transaction)

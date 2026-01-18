@@ -38,6 +38,10 @@ class can_driver extends uvm_driver #(can_transaction);
   bit        crc_en;
   bit [14:0] crc_reg;
   localparam bit [14:0] CAN_CRC15_POLY = 15'h4599;
+  
+   //Arbitrationn Flags 
+  bit in_arbitration;
+  bit lost_arbitration;
 
   function new(string name = "can_driver", uvm_component parent = null);
     super.new(name, parent);
