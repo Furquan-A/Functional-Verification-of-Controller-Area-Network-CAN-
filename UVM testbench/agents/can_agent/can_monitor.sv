@@ -4,60 +4,47 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-// NOTE: Prefer compiling via can_pkg.sv (so you don't need extra `include`s here).
-
 class can_monitor extends uvm_monitor;
   `uvm_component_utils(can_monitor)
 
   uvm_analysis_port #(can_transaction) ap;
 
-  virtual can_if      vif;
-  can_agent_config    c_cfg;
+  virtual can_if   vif;
+  can_agent_config c_cfg;
 
-  // ------ State machine (monitor internal) ---------------
   typedef enum int {
     ST_IDLE = 0,
     ST_SOF,
-    ST_ARB,     // arbitration: ID + RTR/SRR + IDE + (extended id) + RTR
-    ST_CTRL,    // control: r0 + DLC
-    ST_DATA,    // data bytes
-    ST_CRC,     // CRC + delimiter
-    ST_ACK,     // ACK slot + delimiter
-    ST_EOF      // EOF bits
+    ST_ARB,
+    ST_CTRL,
+    ST_DATA,
+    ST_CRC,
+    ST_ACK,
+    ST_EOF
   } can_mon_state_e;
 
   can_mon_state_e state;
 
-  // ----------- Internal Decode Bookkeeping ----------------
-  can_transaction tr;      // current frame being built
+  can_transaction tr;
 
-  int unsigned bit_idx;
-  int unsigned byte_idx;
-  bit [7:0]    cur_byte;
-
-  // Stuff-bit tracking (logical stream)
   bit          last_logical_bit;
   int unsigned same_cnt;
   bit          stuff_expected;
 
-  // Precomputed timing
   time bit_time;
   time sp_offset;
 
-  // ===================== CONSTRUCTOR ======================
+  // Track whether THIS node appeared to transmit dominant during this frame
+  // (helps avoid ACK-ing your own frame)
+  bit saw_own_tx_dominant;
+
   function new(string name="can_monitor", uvm_component parent=null);
     super.new(name, parent);
     ap    = new("ap", this);
     state = ST_IDLE;
   endfunction
 
-  // ===================== BUILD_PHASE ======================
   function void build_phase(uvm_phase phase);
-  
-    // Ensure this node is recessive by default
-   // @vif.can_cb;
-   // vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1;
-    
     super.build_phase(phase);
 
     if (!uvm_config_db#(can_agent_config)::get(this, "", "m_cfg", c_cfg))
@@ -69,42 +56,38 @@ class can_monitor extends uvm_monitor;
     bit_time  = c_cfg.bit_time_ns * 1ns;
     sp_offset = (c_cfg.bit_time_ns * c_cfg.sample_point_pct * 1ns) / 100;
 
-    // Initialize stuff tracking to idle bus (recessive)
     last_logical_bit = 1'b1;
     same_cnt         = 0;
     stuff_expected   = 0;
 
     `uvm_info("CAN_MON",
-      $sformatf("Monitor ready: bit_time=%0t sp_offset=%0t (%0d%%)",
-                bit_time, sp_offset, c_cfg.sample_point_pct),
+      $sformatf("Monitor ready: node_id=%0d bit_time=%0t sp_offset=%0t (%0d%%) ack_en=%0b",
+                c_cfg.node_id, bit_time, sp_offset, c_cfg.sample_point_pct, c_cfg.ack_enable),
       UVM_LOW)
   endfunction
 
-  // ===================== RUN_PHASE ========================
   task run_phase(uvm_phase phase);
     super.run_phase(phase);
 
     forever begin
       case (state)
-
         ST_IDLE: begin
-          wait_for_sof();
+          wait_for_sof_boundary();
           start_new_frame();
           state = ST_SOF;
         end
 
         ST_SOF: begin
           bit b;
-          // We are aligned to SOF start by wait_for_sof()
-          sample_raw_bit(b);
+          // We are already on the SOF bit boundary
+          sample_current_bit(b);
           if (b !== 1'b0) begin
             `uvm_warning("CAN_MON","SOF not dominant; resync to IDLE")
             state = ST_IDLE;
           end
           else begin
             init_logical_stream(b);
-            state   = ST_ARB;
-            bit_idx = 0;
+            state = ST_ARB;
           end
         end
 
@@ -115,24 +98,31 @@ class can_monitor extends uvm_monitor;
         ST_ACK:  decode_ack_field();
         ST_EOF:  decode_eof_field();
 
-        default: begin
-          `uvm_warning("CAN_MON","Unknown state; returning to IDLE")
-          state = ST_IDLE;
-        end
+        default: state = ST_IDLE;
       endcase
     end
   endtask
 
-  // =====================================================================
-  // BIT ENGINE (raw sampling + logical de-stuffing)
-  // =====================================================================
+  // ===========================================================================
+  // BIT ENGINE (ALIGNED)
+  // ===========================================================================
 
-  // Sample one RAW bus bit at the configured sample point.
-  // IMPORTANT: This assumes the caller is aligned to the start of a bit time.
-  task automatic sample_raw_bit(output bit b);
+  // sample within *current* bit time (assumes already aligned to boundary)
+  task automatic sample_current_bit(output bit b);
     #(sp_offset);
     b = vif.rx_i;
     #(bit_time - sp_offset);
+  endtask
+
+  // move to next bit boundary and sample that bit
+  task automatic sample_next_bit(output bit b);
+    @vif.can_cb;
+
+    // record whether this node is driving dominant at the start of the bit
+    if (vif.tb_tx[c_cfg.node_id] === 1'b0)
+      saw_own_tx_dominant = 1'b1;
+
+    sample_current_bit(b);
   endtask
 
   function void init_logical_stream(bit first_bit);
@@ -141,15 +131,12 @@ class can_monitor extends uvm_monitor;
     stuff_expected   = 0;
   endfunction
 
-  // Fetch next LOGICAL bit (destuffs raw stream).
-  // On stuff error, it forces state back to IDLE and returns.
   task automatic get_logical_bit(output bit lb);
     bit rb;
 
     forever begin
-      sample_raw_bit(rb);
+      sample_next_bit(rb);
 
-      // If a stuff bit is expected, it must be the opposite of last logical bit.
       if (stuff_expected) begin
         if (rb == last_logical_bit) begin
           `uvm_warning("CAN_MON","Stuff error suspected; resync to IDLE")
@@ -157,31 +144,29 @@ class can_monitor extends uvm_monitor;
           return;
         end
         stuff_expected = 0;
-        continue; // stuff bit consumed, now fetch the next logical bit
+        continue;
       end
 
       lb = rb;
 
-      // Update run-length tracking on logical bits only
-      if (lb == last_logical_bit)
-        same_cnt++;
-      else
-        same_cnt = 1;
+      if (lb == last_logical_bit) same_cnt++;
+      else same_cnt = 1;
 
       last_logical_bit = lb;
 
       if (same_cnt == 5) begin
         stuff_expected = 1;
-        same_cnt       = 0; // next raw bit is a stuff bit (not a logical bit)
+        same_cnt       = 0;
       end
 
       return;
     end
   endtask
 
-  // =====================================================================
-  // Arbitration Decode (STD + EXT)
-  // =====================================================================
+  // ===========================================================================
+  // DECODE
+  // ===========================================================================
+
   task automatic decode_arbitration();
     bit        b;
     bit        rtr;
@@ -193,197 +178,149 @@ class can_monitor extends uvm_monitor;
     can_id  = '0;
     rtr     = 1'b0;
 
-    // -------- BASE ID (11 bits), MSB..LSB
     for (int i = 10; i >= 0; i--) begin
-      get_logical_bit(b);
-      if (state == ST_IDLE) return;
+      get_logical_bit(b); if (state==ST_IDLE) return;
       base_id[i] = b;
     end
 
-    // -------- RTR (STD) or SRR (EXT placeholder)
-    get_logical_bit(b);
-    if (state == ST_IDLE) return;
-
-    // -------- IDE
-    get_logical_bit(ide);
-    if (state == ST_IDLE) return;
+    get_logical_bit(b);   if (state==ST_IDLE) return; // RTR or SRR
+    get_logical_bit(ide); if (state==ST_IDLE) return;
 
     if (ide == 1'b0) begin
-      // -------- STANDARD FRAME
       can_id[10:0] = base_id;
       rtr          = b;
 
       tr.can_fmt = `CAN_ID_STD;
-      tr.id      = can_id; // upper bits 0
-      tr.f_type  = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+      tr.id      = can_id;
+      tr.f_type  = (rtr==1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
 
       state = ST_CTRL;
     end
     else begin
-      // -------- EXTENDED FRAME
-      // b is SRR (should be recessive 1)
       if (b !== 1'b1)
-        `uvm_warning("CAN_MON","SRR in EXT frame is not recessive (form error)")
+        `uvm_warning("CAN_MON","SRR in EXT frame not recessive (form error)")
 
       can_id[28:18] = base_id;
 
-      // Extended ID lower 18 bits
       for (int i = 17; i >= 0; i--) begin
-        get_logical_bit(b);
-        if (state == ST_IDLE) return;
+        get_logical_bit(b); if (state==ST_IDLE) return;
         can_id[i] = b;
       end
 
-      // RTR bit (for extended)
-      get_logical_bit(b);
-      if (state == ST_IDLE) return;
+      get_logical_bit(b); if (state==ST_IDLE) return; // RTR
       rtr = b;
 
       tr.can_fmt = `CAN_ID_EXT;
       tr.id      = can_id;
-      tr.f_type  = (rtr == 1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
+      tr.f_type  = (rtr==1'b1) ? `CAN_REMOTE_FRAME : `CAN_DATA_FRAME;
 
       state = ST_CTRL;
     end
   endtask
 
-  // =====================================================================
-  // CONTROL FIELD DECODE (classic CAN)
-  // =====================================================================
   task automatic decode_control_std();
-    bit     b;
-    bit     r0;
+    bit b;
+    bit r0;
     bit [3:0] dlc_value;
 
-    get_logical_bit(r0);
-    if (state == ST_IDLE) return;
-
-    if (r0 !== 1'b0)
-      `uvm_warning("CAN_MON","r0 not zero (possible form error)")
+    get_logical_bit(r0); if (state==ST_IDLE) return;
+    if (r0 !== 1'b0) `uvm_warning("CAN_MON","r0 not zero")
 
     dlc_value = 4'd0;
     for (int i = 3; i >= 0; i--) begin
-      get_logical_bit(b);
-      if (state == ST_IDLE) return;
+      get_logical_bit(b); if (state==ST_IDLE) return;
       dlc_value[i] = b;
     end
 
     tr.dlc = dlc_value;
-
-    // For classic CAN, payload max is 8. Clamp to keep smoke robust.
     if (tr.dlc > 8) begin
-      `uvm_warning("CAN_MON", $sformatf("DLC=%0d > 8 in classic CAN; clamping to 8 for decode", tr.dlc))
+      `uvm_warning("CAN_MON",$sformatf("DLC=%0d > 8 (classic); clamping to 8", tr.dlc))
       tr.dlc = 8;
     end
 
-    if (tr.dlc == 0)
-      state = ST_CRC;
-    else
-      state = ST_DATA;
+    state = (tr.dlc == 0) ? ST_CRC : ST_DATA;
   endtask
 
-  // =====================================================================
-  // DATA FIELD DECODE
-  // =====================================================================
   task automatic decode_data_field();
     bit b;
+    bit [7:0] cur_byte;
 
     tr.data = new[tr.dlc];
 
     for (int unsigned bi = 0; bi < tr.dlc; bi++) begin
       cur_byte = 8'h00;
-
       for (int bitpos = 7; bitpos >= 0; bitpos--) begin
-        get_logical_bit(b);
-        if (state == ST_IDLE) return;
+        get_logical_bit(b); if (state==ST_IDLE) return;
         cur_byte[bitpos] = b;
       end
-
       tr.data[bi] = cur_byte;
     end
 
     state = ST_CRC;
   endtask
 
-  // =====================================================================
-  // CRC FIELD DECODE (CRC15 + delimiter)
-  // =====================================================================
   task automatic decode_crc_field();
     bit b;
     bit [14:0] crc_seq;
 
     crc_seq = 15'd0;
 
-    // CRC sequence bits are still subject to stuffing -> use logical bits
     for (int i = 14; i >= 0; i--) begin
-      get_logical_bit(b);
-      if (state == ST_IDLE) return;
+      get_logical_bit(b); if (state==ST_IDLE) return;
       crc_seq[i] = b;
     end
-
     tr.crc_obs = crc_seq;
 
-    // CRC delimiter is NOT stuffed -> raw
-    sample_raw_bit(b);
+    // CRC delimiter (raw, not stuffed)
+    sample_next_bit(b);
     if (b !== 1'b1)
-      `uvm_warning("CAN_MON","CRC delimiter not recessive (possible form error)")
+      `uvm_warning("CAN_MON","CRC delimiter not recessive")
 
     state = ST_ACK;
   endtask
 
-  // =====================================================================
-  // ACK FIELD DECODE (slot + delimiter)
-  // =====================================================================
-  // Drive dominant ACK for exactly 1 bit time (wired-AND bus)
-  // Uses same alignment as sample_raw_bit(): starts at next bit boundary.
-  
+  // ===========================================================================
+  // ACK (ALIGNED)
+  // ===========================================================================
+
   task automatic drive_ack_slot_one_bit();
-    // We are already at the start of the ACK slot bit when decode_ack_field() calls us.
-    // Drive dominant for exactly one bit_time, then release.
-    vif.tb_tx[c_cfg.node_id] <= 1'b0;   // dominant ACK
+    @vif.can_cb;
+    vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b0;
     #(bit_time);
-    vif.tb_tx[c_cfg.node_id] <= 1'b1;   // release (recessive)
+    @vif.can_cb;
+    vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1;
   endtask
 
-  
-  task decode_ack_field();
+  task automatic decode_ack_field();
     bit ack_slot;
     bit ack_delim;
-  
-    // ACK only if this node is a receiver (not currently transmitting)
-    if (c_cfg.ack_enable && !c_cfg.is_tx_in_progress) begin
-      `uvm_info("CAN_ACK",
-                $sformatf("Node%0d drives ACK (receiver)", c_cfg.node_id),
-                UVM_LOW)
+
+    // ACK rule (TB): ACK only if enabled AND this node did not appear to TX dominant earlier
+    if (c_cfg.ack_enable && !saw_own_tx_dominant) begin
       fork
         drive_ack_slot_one_bit();
       join_none
+      `uvm_info("CAN_ACK", $sformatf("Node%0d drove ACK", c_cfg.node_id), UVM_LOW)
     end
-  
-    // Sample ACK slot
-    sample_raw_bit(ack_slot);
-  
-    // If nobody ACKed, bus stays recessive -> error
-    if (ack_slot === 1'b1)
+
+    // ACK slot (raw)
+    sample_next_bit(ack_slot);
+    if (ack_slot == 1'b1)
       `uvm_warning("CAN_MON","ACK error (no dominant ACK observed)")
-  
-    // Sample ACK delimiter (must be recessive)
-    sample_raw_bit(ack_delim);
+
+    // ACK delimiter (raw)
+    sample_next_bit(ack_delim);
     if (ack_delim !== 1'b1)
-      `uvm_warning("CAN_MON","ACK delimiter not recessive (possible form error)")
-  
+      `uvm_warning("CAN_MON","ACK delimiter not recessive")
+
     state = ST_EOF;
   endtask
 
-
-  // =====================================================================
-  // EOF FIELD DECODE (7 recessive bits, raw, not stuffed)
-  // =====================================================================
   task automatic decode_eof_field();
     bit b;
 
     for (int i = 0; i < 7; i++) begin
-      sample_raw_bit(b);
+      sample_next_bit(b);
       if (b !== 1'b1)
         `uvm_warning("CAN_MON", $sformatf("EOF bit %0d not recessive", i))
     end
@@ -392,33 +329,30 @@ class can_monitor extends uvm_monitor;
     state = ST_IDLE;
   endtask
 
-  // =====================================================================
-  // Frame lifecycle helpers
-  // =====================================================================
-  // Align to the START of SOF (first dominant edge).
-  // After this returns, we are at the beginning of a bit time.
-  task automatic wait_for_sof();
-    // Ensure bus is idle first
-    wait (vif.rx_i === 1'b1);
+  // ===========================================================================
+  // FRAME LIFECYCLE
+  // ===========================================================================
 
-    // Wait for SOF dominant edge
-    wait (vif.rx_i === 1'b0);
-
-    // We don't know exact edge time vs our timebase; start sampling from here.
-    // (Smoke-level alignment. You can refine later.)
+  // Wait for SOF by checking bus on bit boundaries (so we don't start 1-bit late)
+  task automatic wait_for_sof_boundary();
+    forever begin
+      @vif.can_cb;
+      if (vif.rx_i === 1'b0) return; // SOF begins exactly at bit boundary (driver drives at can_cb)
+    end
   endtask
 
   task automatic start_new_frame();
     tr = can_transaction::type_id::create("tr");
-    tr.t_start = $time;
+    tr.t_start  = $time;
     tr.src_node = c_cfg.node_id;
-
 
     tr.f_type  = `CAN_DATA_FRAME;
     tr.can_fmt = `CAN_ID_STD;
     tr.id      = '0;
     tr.dlc     = 0;
     tr.data    = new[0];
+
+    saw_own_tx_dominant = 1'b0;
   endtask
 
   task automatic end_frame_and_publish();
