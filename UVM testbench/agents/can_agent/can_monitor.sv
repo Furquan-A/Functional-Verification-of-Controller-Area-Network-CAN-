@@ -53,6 +53,11 @@ class can_monitor extends uvm_monitor;
 
   // ===================== BUILD_PHASE ======================
   function void build_phase(uvm_phase phase);
+  
+    // Ensure this node is recessive by default
+   // @vif.can_cb;
+   // vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1;
+    
     super.build_phase(phase);
 
     if (!uvm_config_db#(can_agent_config)::get(this, "", "m_cfg", c_cfg))
@@ -329,23 +334,47 @@ class can_monitor extends uvm_monitor;
   // =====================================================================
   // ACK FIELD DECODE (slot + delimiter)
   // =====================================================================
-  task automatic decode_ack_field();
+  // Drive dominant ACK for exactly 1 bit time (wired-AND bus)
+  // Uses same alignment as sample_raw_bit(): starts at next bit boundary.
+  
+  task automatic drive_ack_slot_one_bit();
+    // We are already at the start of the ACK slot bit when decode_ack_field() calls us.
+    // Drive dominant for exactly one bit_time, then release.
+    vif.tb_tx[c_cfg.node_id] <= 1'b0;   // dominant ACK
+    #(bit_time);
+    vif.tb_tx[c_cfg.node_id] <= 1'b1;   // release (recessive)
+  endtask
+
+  
+  task decode_ack_field();
     bit ack_slot;
     bit ack_delim;
-
-    // ACK slot is raw (not stuffed)
+  
+    // ACK only if this node is a receiver (not currently transmitting)
+    if (c_cfg.ack_enable && !c_cfg.is_tx_in_progress) begin
+      `uvm_info("CAN_ACK",
+                $sformatf("Node%0d drives ACK (receiver)", c_cfg.node_id),
+                UVM_LOW)
+      fork
+        drive_ack_slot_one_bit();
+      join_none
+    end
+  
+    // Sample ACK slot
     sample_raw_bit(ack_slot);
-
-    // For smoke, this warning is OK if you haven't implemented ACK driving yet.
-    if (ack_slot == 1'b1)
-      `uvm_warning("CAN_MON","ACK slot recessive (no dominant ACK observed)")
-
+  
+    // If nobody ACKed, bus stays recessive -> error
+    if (ack_slot === 1'b1)
+      `uvm_warning("CAN_MON","ACK error (no dominant ACK observed)")
+  
+    // Sample ACK delimiter (must be recessive)
     sample_raw_bit(ack_delim);
     if (ack_delim !== 1'b1)
       `uvm_warning("CAN_MON","ACK delimiter not recessive (possible form error)")
-
+  
     state = ST_EOF;
   endtask
+
 
   // =====================================================================
   // EOF FIELD DECODE (7 recessive bits, raw, not stuffed)
@@ -382,6 +411,8 @@ class can_monitor extends uvm_monitor;
   task automatic start_new_frame();
     tr = can_transaction::type_id::create("tr");
     tr.t_start = $time;
+    tr.src_node = c_cfg.node_id;
+
 
     tr.f_type  = `CAN_DATA_FRAME;
     tr.can_fmt = `CAN_ID_STD;
