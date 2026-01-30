@@ -10,7 +10,7 @@ import uvm_pkg::*;
 // - Aligns EVERY bit to @vif.can_cb
 // - Samples bus at sample-point during arbitration bits only
 // - Detects arbitration loss: sent recessive(1) but bus sampled dominant(0)
-// - On loss: releases bus, records arb_lost + bit index, waits for EOF (7 recessive) then returns
+// - On loss: releases bus, records arb_lost + bit index, waits for EOF then returns
 //--------------------------------------------------------------------------------------------------
 class can_driver extends uvm_driver #(can_transaction);
   `uvm_component_utils(can_driver)
@@ -32,7 +32,7 @@ class can_driver extends uvm_driver #(can_transaction);
   // Arbitration flags
   bit          in_arbitration;
   bit          lost_arbitration;
-  int unsigned arb_bit_idx; // increments once per arbitration physical bit
+  int unsigned arb_bit_idx; // increments once per arbitration PHYSICAL bit we drive
 
   // CRC
   bit        crc_en;
@@ -78,9 +78,11 @@ class can_driver extends uvm_driver #(can_transaction);
       tr_local.src_node      = c_cfg.node_id;
       tr_local.arb_lost      = 1'b0;
       tr_local.arb_lost_bit  = 0;
-
+      
+      c_cfg.is_tx_in_progress = 1'b1;
       send_frame(tr_local);
-
+      c_cfg.is_tx_in_progress = 1'b0;
+      
       tr_local.t_end = $time;
 
       // publish what we attempted
@@ -118,7 +120,6 @@ class can_driver extends uvm_driver #(can_transaction);
       if ((level === 1'b1) && (bus_sample === 1'b0)) begin
         lost_arbitration = 1'b1;
         // release immediately
-        @vif.can_cb;
         vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1;
       end
       arb_bit_idx++;
@@ -211,37 +212,48 @@ class can_driver extends uvm_driver #(can_transaction);
       #(bit_time - sp_offset);
 
       if (b === 1'b1) recessive_cnt++;
-      else recessive_cnt = 0;
+      else            recessive_cnt = 0;
     end
 
     // release
     drive_tx(1'b1);
   endtask
 
+  // ===========================================================================
+  // ARBITRATION LOSS HANDLER  (*** THIS WAS MISSING IN YOUR FILE ***)
+  // ===========================================================================
   task automatic handle_arbitration_loss(ref can_transaction tr_in);
+
+    // THIS NODE IS NO LONGER A TRANSMITTER
+    c_cfg.is_tx_in_progress = 1'b0;
+  
     tr_in.arb_lost = 1'b1;
-    tr_in.arb_lost_bit = (arb_bit_idx == 0) ? 0 : (arb_bit_idx - 1);
-
-    // release
+    if (arb_bit_idx == 0) tr_in.arb_lost_bit = 0;
+    else                  tr_in.arb_lost_bit = arb_bit_idx - 1;
+  
     drive_tx(1'b1);
-
+  
+    in_arbitration = 1'b0;
+    stuff_en       = 1'b0;
+    crc_en         = 1'b0;
+  
     `uvm_info("CAN_ARB",
-      $sformatf("[LOSS] node%0d lost arbitration at arb_bit=%0d (id=0x%0h) -> released",
+      $sformatf("[LOSS] node%0d lost arbitration at arb_bit=%0d (id=0x%0h) -> released bus",
                 c_cfg.node_id, tr_in.arb_lost_bit, tr_in.id),
       UVM_LOW);
-
+  
     wait_frame_end_after_loss();
   endtask
 
   // ===========================================================================
   // FRAME TRANSMIT (ARBITRATION SUPPORTED)
   // ===========================================================================
-
   task automatic send_frame(can_transaction tr_in);
-
+    
+    
     int unsigned dlc_clamped;
     int unsigned nbytes;
-
+    c_cfg.is_tx_in_progress = 1'b1;
     dlc_clamped = (tr_in.dlc > 8) ? 8 : tr_in.dlc;
     nbytes      = (tr_in.data.size() < dlc_clamped) ? tr_in.data.size() : dlc_clamped;
 
@@ -270,6 +282,7 @@ class can_driver extends uvm_driver #(can_transaction);
         drive_frame_bit(tr_in.id[i]);
         if (lost_arbitration) begin handle_arbitration_loss(tr_in); return; end
       end
+
       drive_frame_bit((tr_in.f_type == `CAN_REMOTE_FRAME) ? 1'b1 : 1'b0); // RTR
       if (lost_arbitration) begin handle_arbitration_loss(tr_in); return; end
 

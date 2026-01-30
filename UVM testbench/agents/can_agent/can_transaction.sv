@@ -43,6 +43,8 @@ class can_transaction extends uvm_sequence_item;
     `uvm_field_int(inj_ack_error,   UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
 
     `uvm_field_int(crc_obs,        UVM_DEFAULT | UVM_NOPACK)
+    `uvm_field_int(src_node, UVM_DEFAULT | UVM_NOPACK)
+
   `uvm_object_utils_end
 
   // ---------- CONSTRAINTS ---------------------------------------------
@@ -91,20 +93,31 @@ class can_transaction extends uvm_sequence_item;
   endfunction
 
   function string convert2string();
-    string fmt_s  = is_std() ? "STD" : "EXT";
-    string type_s;
+  string fmt_s  = is_std() ? "STD" : "EXT";
+  string type_s;
+  string payload;
+  payload = "";
 
-    case (f_type)
-      `CAN_DATA_FRAME:     type_s = "DATA";
-      `CAN_REMOTE_FRAME:   type_s = "REMOTE";
-      `CAN_ERROR_FRAME:    type_s = "ERROR";
-      `CAN_OVERLOAD_FRAME: type_s = "OVERLOAD";
-      default:             type_s = "UNKNOWN";
-    endcase
+  case (f_type)
+    `CAN_DATA_FRAME:     type_s = "DATA";
+    `CAN_REMOTE_FRAME:   type_s = "REMOTE";
+    `CAN_ERROR_FRAME:    type_s = "ERROR";
+    `CAN_OVERLOAD_FRAME: type_s = "OVERLOAD";
+    default:             type_s = "UNKNOWN";
+  endcase
 
-    return $sformatf("CAN[%s %s] id=0x%0h dlc=%0d bytes=%0d",
-                     fmt_s, type_s, id, dlc, data.size());
-  endfunction
+  if (data.size() > 0) begin
+    payload = " data=";
+    foreach (data[i]) begin
+      payload = {payload, $sformatf("%02x", data[i])};
+      if (i != data.size()-1) payload = {payload, " "};
+    end
+  end
+
+  return $sformatf("CAN[%s %s] id=0x%0h dlc=%0d bytes=%0d%s",
+                   fmt_s, type_s, id, dlc, data.size(), payload);
+endfunction
+
 
   function void do_print(uvm_printer printer);
     string ft;

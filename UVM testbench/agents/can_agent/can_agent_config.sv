@@ -18,6 +18,8 @@ class can_agent_config extends uvm_object;
 	
 	// logic node identifier 
 	int unsigned node_id = 0;
+  bit is_tx_in_progress = 0; //  set by driver, used by monitor for ACK gating
+
 	
 	int unsigned wr_cnt = 0;
 	int unsigned rd_cnt = 0;
@@ -38,7 +40,7 @@ class can_agent_config extends uvm_object;
 	// ----------------------------------------------------------
 	
 	// whether this node transmits ACK
-	bit ack_enable = 1'b1;
+	bit ack_enable = 1'b0;
 	
 	// whether this node participate in the arbitration 
 	bit arbitration_enable = 1'b1;
@@ -49,12 +51,12 @@ class can_agent_config extends uvm_object;
 	// ----------------------------------------------------------
 	
 	// enable any error injection 
-	bit enable_error_injection = 1'b1;
+	bit enable_error_injection = 1'b0; // OFF by default
 	
 	// fine grain error types 
 	bit inject_crc_error = 1'b0;
 	bit inject_stuff_error = 1'b0;
-	bit inject_form_error = 1'b1;
+	bit inject_form_error = 1'b0;
 	bit inject_ack_error = 1'b0;
 	
 	
@@ -88,7 +90,7 @@ class can_agent_config extends uvm_object;
 		  reason = "bit_time_ns must be > 0";
 		  ok = 0;
 		end
-		else if (sample_point_pct > 100) begin
+		else if (sample_point_pct == 0 || sample_point_pct >= 100) begin
 		  reason = "sample_point_pct must be between 0 and 100";
 		  ok = 0;
 		end

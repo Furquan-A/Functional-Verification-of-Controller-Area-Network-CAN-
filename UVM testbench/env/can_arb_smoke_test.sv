@@ -22,23 +22,38 @@ class can_arb_smoke_test extends uvm_test;
     env_cfg.vif = vif;
 
     // 2 CAN nodes, no reg agent for now
-    env_cfg.resize(2, 0);
+    env_cfg.resize(3, 0);
     env_cfg.has_reg_agent = 0;
 
-    // Both ACTIVE (both transmit)
+    /* // Both ACTIVE (both transmit)
     foreach (env_cfg.c_cfg[i]) begin
       env_cfg.c_cfg[i].is_active  = UVM_ACTIVE;
       env_cfg.c_cfg[i].node_id    = i;
       env_cfg.c_cfg[i].vif        = vif;
       env_cfg.c_cfg[i].ack_enable = 0; // add a 3rd node later for ACK
     end
-
+    */
+    
+    env_cng.c_cfg[0].is_active = UVM_ACTIVE;
+    env_cfg.c_cfg[0].node_id = 0;
+    env_cfg.c_cfg[0].ack_enable = 0; // Winner of Arbitration (TX) should not ack 
+    
+    env_cng.c_cfg[1].is_active = UVM_ACTIVE;
+    env_cfg.c_cfg[1].node_id = 1;
+    env_cfg.c_cfg[1].ack_enable = 1; // receiver will ack 
+    
+    env_cng.c_cfg[2].is_active = UVM_ACTIVE;
+    env_cfg.c_cfg[2].node_id = 2;
+    env_cfg.c_cfg[2].ack_enable = 1; // receiver will ack
+    
     // Validate
     begin
       string why;
       if (!env_cfg.validate(why))
         `uvm_fatal("CAN_ARB_TEST", {"env_cfg validate failed: ", why})
     end
+    
+    uvm_config_db#(int unsigned)::set(this, "m_env.c_sb", "num_nodes", 2);
 
     uvm_config_db#(can_env_config)::set(this, "m_env", "can_env_config", env_cfg);
     m_env = can_env::type_id::create("m_env", this);
