@@ -27,11 +27,13 @@ class can_smoke_test extends uvm_test;
     env_cfg.c_cfg[0].is_active = UVM_ACTIVE;
     env_cfg.c_cfg[0].node_id   = 0;
     env_cfg.c_cfg[0].vif       = vif;
+    env_cfg.c_cfg[0].ack_enable = 0;
     
     //Nde 1: Passive observer for now ( we will add ack later)
-    env_cfg.c_cfg[1].is_active  = UVM_ACTIVE;
+    env_cfg.c_cfg[1].is_active  = UVM_ACTIVE; 
     env_cfg.c_cfg[1].node_id   = 1;
     env_cfg.c_cfg[0].vif       = vif;
+    env_cfg.c_cfg[1].ack_enable = 1;
     
     uvm_config_db#(can_env_config)::set(this, "m_env", "can_env_config", env_cfg);
 

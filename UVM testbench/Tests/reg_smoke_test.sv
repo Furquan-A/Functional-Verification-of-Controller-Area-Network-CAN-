@@ -2,8 +2,8 @@
 `define REG_SMOKE_TEST_SV
 
 `include "uvm_macros.svh"
-import uvm_pkg::*;
-`include "can_defines.sv"
+//import uvm_pkg::*;
+//`include "can_defines.sv"
 
 class reg_smoke_test extends uvm_test;
 	`uvm_component_utils(reg_smoke_test)
@@ -56,32 +56,41 @@ endfunction
 // ===================== run_phase ============================================================
 
 task reg_smoke_test :: run_phase(uvm_phase phase);
-	
-	
-	phase.raise_objection(this);
-	
-	`uvm_info("REG_SMOKE_TEST","starting register smoke test ",UVM_MEDIUM);
-	
-	// ----------------------------------------------------------------------
-	// BASIC WRITE TEST 
-	// ----------------------------------------------------------------------
-	reg_write_seq wr = reg_write_seq::type_id::create("wr_seq");
-	
-	wr.addr = `CAN_MODE_REG; // writing mode register 
-	wr.data = 8'h01; // example value 
-	wr.start(m_env.r_agent[0].rseqrh); // start on reg sequencer 
-	
-	// ----------------------------------------------------------------------
-	// BASIC READ TEST 
-	// ----------------------------------------------------------------------
-	reg_read_seq rd = reg_read_seq :: type_id::create("rd_seq");
-	
-	rd.addr = `CAN_MODE_REG;
-	rd.start(m_env.r_agent[0].rseqrh);
-	
-	`uvm_info("REG_SMOKE_TEST",$sformatf("Read MODE register returned = 0x%02h", rd.data_out),UVM_MEDIUM)
-	
-	phase.drop_objection(this);
-endtask 
+
+  // ---- ALL declarations first ----
+  reg_write_seq wr;
+  reg_read_seq  rd;
+
+  // ---- now executable statements ----
+  phase.raise_objection(this);
+
+  `uvm_info("REG_SMOKE_TEST",
+            "starting register smoke test",
+            UVM_MEDIUM);
+
+  // ----------------------------------------------------------------------
+  // BASIC WRITE TEST
+  // ----------------------------------------------------------------------
+  wr = reg_write_seq::type_id::create("wr_seq");
+
+  wr.addr = `CAN_MODE_REG;
+  wr.data = 8'h01;
+  wr.start(m_env.r_agent[0].rseqrh);
+
+  // ----------------------------------------------------------------------
+  // BASIC READ TEST
+  // ----------------------------------------------------------------------
+  rd = reg_read_seq::type_id::create("rd_seq");
+
+  rd.addr = `CAN_MODE_REG;
+  rd.start(m_env.r_agent[0].rseqrh);
+
+  `uvm_info("REG_SMOKE_TEST",
+            $sformatf("Read MODE register returned = 0x%02h", rd.data_out),
+            UVM_MEDIUM);
+
+  phase.drop_objection(this);
+endtask
+
 
 `endif //REG_SMOKE_TEST_SV
