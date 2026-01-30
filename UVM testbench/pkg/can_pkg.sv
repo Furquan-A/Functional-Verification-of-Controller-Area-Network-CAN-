@@ -24,7 +24,8 @@ package can_pkg;
   `include "env/can_env.sv"
 
   `include "sequences/can_tx_seq.sv"
+  `include "sequences/can_arb_tx_seq.sv"
   `include "tests/can_smoke_test.sv"
-
+  `include "tests/can_arb_smoke_test.sv"
 endpackage : can_pkg
 `endif
