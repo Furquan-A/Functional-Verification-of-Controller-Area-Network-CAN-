@@ -76,7 +76,9 @@ class can_env extends uvm_env;
     // Connect analysis ports to scoreboard
     if (c_sb != null) 
       begin
-      c_agent[0].drv_ap.connect(c_sb.exp_imp);
+      foreach (c_agent[i]) begin
+        c_agent[i].drv_ap.connect(c_sb.exp_imp);
+      end
       foreach (c_agent[i]) 
           c_agent[i].mon_ap.connect(c_sb.obs_imp);
 
