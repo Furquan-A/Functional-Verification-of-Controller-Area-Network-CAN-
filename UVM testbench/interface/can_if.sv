@@ -1,6 +1,6 @@
 // can_if.sv — unified interface for Wishbone or Legacy (select via +define+CAN_WISHBONE_IF)
 interface can_if #(
-  parameter int unsigned NUM_TB_NODES = 2
+  parameter int unsigned NUM_TB_NODES = 3
 )(
   input  logic clk_i
 `ifdef CAN_WISHBONE_IF
