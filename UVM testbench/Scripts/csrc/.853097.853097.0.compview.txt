@@ -1,0 +1,7 @@
+Command exited with non-zero status 255
+{"vcs1":{"timestamp_begin":1771032815.463523060, "rt":1.20, "ut":1.04, "st":0.08}}
+{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1771032814.929477653}
+{"VCS_COMP_START_TIME": 1771032814.929477653}
+{"VCS_COMP_END_TIME": 1771032816.755693194}
+{"VCS_USER_OPTIONS": "-full64 -sverilog -timescale=1ns/1ps -ntb_opts uvm-1.2 -debug_access+all +incdir+/home/users4/fl892838/can_uvm_project/rtl +incdir+/home/users4/fl892838/can_uvm_project/tb +incdir+/home/users4/fl892838/can_uvm_project/tb/pkg +incdir+/home/users4/fl892838/can_uvm_project/tb/can_interface /home/users4/fl892838/can_uvm_project/rtl/can_bsp.v /home/users4/fl892838/can_uvm_project/rtl/can_btl.v /home/users4/fl892838/can_uvm_project/rtl/can_crc.v /home/users4/fl892838/can_uvm_project/rtl/can_fifo.v /home/users4/fl892838/can_uvm_project/rtl/can_ibo.v /home/users4/fl892838/can_uvm_project/rtl/can_acf.v /home/users4/fl892838/can_uvm_project/rtl/can_register.v /home/users4/fl892838/can_uvm_project/rtl/can_register_asyn.v /home/users4/fl892838/can_uvm_project/rtl/can_register_asyn_syn.v /home/users4/fl892838/can_uvm_project/rtl/can_register_syn.v /home/users4/fl892838/can_uvm_project/rtl/can_registers.v /home/users4/fl892838/can_uvm_project/rtl/can_top.v /home/users4/fl892838/can_uvm_project/tb/interfaces/can_if.sv /home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv /home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv -o /home/users4/fl892838/can_uvm_project/sim/simv -l /home/users4/fl892838/can_uvm_project/sim/compile.log"}
+{"vcs1": {"peak_mem": 332668}}

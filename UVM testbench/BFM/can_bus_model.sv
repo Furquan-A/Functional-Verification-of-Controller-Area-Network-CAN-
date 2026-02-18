@@ -1,1 +1,0 @@
-class can_bus_model extends 
