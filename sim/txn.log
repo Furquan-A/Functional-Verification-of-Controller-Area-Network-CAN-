@@ -1,4 +1,0 @@
-UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(108) @ 8250000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=8250000 | node=0 | EXP=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | OBS=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(108) @ 8250000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=8250000 | node=1 | EXP=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | OBS=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(108) @ 8250000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=8250000 | node=2 | EXP=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | OBS=CAN[STD DATA] id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-[CAN_SB_TXN]     3

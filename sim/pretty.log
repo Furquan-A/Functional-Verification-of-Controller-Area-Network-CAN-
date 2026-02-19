@@ -1,9 +1,0 @@
-NA         RNTST        Running test can_arb_smoke_test...
-NA         CAN_MON      Observed frame: fmt=STD id=0x20 type=0 dlc=4 bytes=4
-NA         CAN_MON      Observed frame: fmt=STD id=0x20 type=0 dlc=4 bytes=4
-NA         CAN_SB_TXN   id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-NA         CAN_SB_TXN   id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-NA         CAN_SB_TXN   id=0x20 dlc=4 bytes=4 data=11 22 33 44 | PASS
-NA         CAN_MON      Observed frame: fmt=STD id=0x20 type=0 dlc=4 bytes=4
-NA         CAN_SB       Scoreboard summary: Pass=1 Fail=0
-NA         CAN_SB_TXN       3
