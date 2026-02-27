@@ -19,7 +19,19 @@ class can_agent_config extends uvm_object;
 	// logic node identifier 
 	int unsigned node_id = 0;
   bit is_tx_in_progress = 0; //  set by driver, used by monitor for ACK gating
-  bit enable_special_decode; // gate for ERROR and OVERLOAD Frame 
+  
+  bit enable_special_decode = 1'b0 ; // gate for ERROR and OVERLOAD Frame 
+  bit special_decode_idle = 1'b1;       // NEW: allow special detection in ST_IDLE
+  bit special_decode_ifs  = 1'b1;       // NEW: allow overload detection in ST_IFS
+  bit special_decode_mid  = 1'b0;
+  bit strict_ext_ctrl = 1'b0; // default OFF to preserve old behavior
+  bit publish_special_frames = 0;
+
+
+  
+  // Sideband hint from driver ? monitor (only for TX node’s monitor)
+  bit          last_special_valid = 1'b0;
+  int unsigned last_special_ftype = 0;
   
 	int unsigned wr_cnt = 0;
 	int unsigned rd_cnt = 0;

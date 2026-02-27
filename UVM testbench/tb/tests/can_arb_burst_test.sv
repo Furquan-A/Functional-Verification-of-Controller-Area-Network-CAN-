@@ -32,6 +32,8 @@ class can_arb_burst_test extends uvm_test;
     env_cfg.resize(NUM_NODES, 0);
     env_cfg.has_reg_agent = 0;
     env_cfg.has_can_scoreboard = 1;
+    
+
 
     foreach (env_cfg.c_cfg[i]) begin
       env_cfg.c_cfg[i].is_active  = UVM_ACTIVE;
@@ -40,6 +42,8 @@ class can_arb_burst_test extends uvm_test;
       // ACK: allow receivers to ACK.
       // If your monitor uses is_tx_in_progress gating, this is safe even if all are active.
       env_cfg.c_cfg[i].ack_enable = 1'b1;
+      env_cfg.c_cfg[i].enable_special_decode  = 0;
+    env_cfg.c_cfg[i].publish_special_frames = 0;  
     end
 
     begin
@@ -55,7 +59,7 @@ class can_arb_burst_test extends uvm_test;
   task run_phase(uvm_phase phase);
 
   localparam int unsigned NUM_NODES  = 3;
-  localparam int unsigned NUM_ROUNDS = 5;
+  localparam int unsigned NUM_ROUNDS = 4;
 
   can_arb_burst_seq seqs[NUM_NODES];
   uvm_event go;

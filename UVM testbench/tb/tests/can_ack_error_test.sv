@@ -25,6 +25,7 @@ class can_ack_error_test extends uvm_test;
     env_cfg.resize(2, 0);
     env_cfg.has_reg_agent       = 0;
     env_cfg.has_can_scoreboard  = 1;
+    
 
     // ---------------------------
     // Node0 = transmitter
@@ -39,6 +40,12 @@ class can_ack_error_test extends uvm_test;
     env_cfg.c_cfg[1].node_id       = 1;
     env_cfg.c_cfg[1].ack_enable    = 1;      // IMPORTANT: receiver is capable of ACK...
     env_cfg.c_cfg[1].expect_no_ack = 1;      // ...but test forces NO-ACK
+    
+    env_cfg.c_cfg[0].enable_special_decode  = 0;
+    env_cfg.c_cfg[0].publish_special_frames = 0;  
+    env_cfg.c_cfg[1].enable_special_decode  = 0;
+    env_cfg.c_cfg[1].publish_special_frames = 0; 
+
 
     uvm_config_db#(can_env_config)::set(this, "m_env", "can_env_config", env_cfg);
     m_env = can_env::type_id::create("m_env", this);

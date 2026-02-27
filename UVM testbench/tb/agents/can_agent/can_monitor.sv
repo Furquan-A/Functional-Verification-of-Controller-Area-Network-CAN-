@@ -20,7 +20,8 @@ class can_monitor extends uvm_monitor;
     ST_DATA,
     ST_CRC,
     ST_ACK,
-    ST_EOF
+    ST_EOF,
+    ST_IFS
   } can_mon_state_e;
 
   can_mon_state_e state;
@@ -31,6 +32,7 @@ class can_monitor extends uvm_monitor;
   int unsigned same_cnt;
   bit          stuff_expected;
   bit enable_special_decode = 0;
+  bit overload_seen = 0;
 
   // ---------------- CRC bookkeeping ----------------
   bit          crc_calc_en;
@@ -80,35 +82,55 @@ class can_monitor extends uvm_monitor;
     forever begin
       case (state)
           ST_IDLE: begin
-              if (c_cfg.enable_special_decode) begin
-                bit matched;
-                int unsigned ft;
-                @vif.can_cb;
-                if(vif.rx_i ==0) begin 
-                try_decode_special_flag_frame(matched, ft);
-                
-                if (matched) begin
-                  // publish special frame transaction and stay in IDLE after recover
-                  start_new_frame();
-                  tr.f_type = ft;          // ERROR of OVERLOAD FRAME
-                 
-                  end_frame_and_publish();
-                  state = ST_IDLE;
-                  continue;
-                end
-                  // If NOT matched, we already consumed some bits in try_decode...
-                  // Best recovery: resync to IDLE cleanly then continue.
-                  recover_to_idle();
-                  state = ST_IDLE;
-                  continue;
-                end
-              end            
-              // normal path
-              wait_for_sof_boundary();
-              start_new_frame();
-              state = ST_SOF;
+          // ------------------------------------------------------------
+          // Special frame detect (ERROR/OVERLOAD flag + delimiter)
+          // ------------------------------------------------------------
+          if (c_cfg.enable_special_decode && c_cfg.special_decode_idle) begin
+            bit matched;
+            int unsigned ft;
+            bit delim_bad;
+        
+            matched = 1'b0;
+            ft      = `CAN_DATA_FRAME;
+        
+            // Wait until bus goes dominant at a bit boundary
+            wait_for_sof_boundary(); // returns when rx_i==0 on a can_cb edge
+        
+            // Try decoding special flag (consumes bits if it matches)
+            try_decode_special_flag_frame(matched, ft,delim_bad);
+        
+            if (matched) begin
+              // Only PUBLISH special frames when explicitly enabled
+              if (c_cfg.publish_special_frames) begin
+                start_new_frame();
+                tr.f_type = ft;
+                 if (delim_bad) tr.form_error_seen = 1'b1; // set it HERE safely
+                // Optional: mark context if you have special_ctx
+                //tr.special_ctx = (ft == `CAN_OVERLOAD_FRAME) ? SPEC_CTX_INTERMISSION
+                //                                              : SPEC_CTX_IDLE;
+        
+                end_frame_and_publish();
+                state=ST_IDLE;
+                continue;
+              end
+        
+              // Either way, we already consumed delimiter + resynced
+              state = ST_IDLE;
+              continue;
             end
-
+        
+            // Not a special flag; stay in IDLE and wait again
+            state = ST_IDLE;
+            continue;
+          end
+        
+          // ------------------------------------------------------------
+          // Normal path: start a real data/remote frame
+          // ------------------------------------------------------------
+          wait_for_sof_boundary();
+          start_new_frame();
+          state = ST_SOF;
+        end
 
         ST_SOF: begin
           bit sof;
@@ -130,11 +152,23 @@ class can_monitor extends uvm_monitor;
         end
 
         ST_ARB:  decode_arbitration();
-        ST_CTRL: decode_control_std();
+        ST_CTRL: decode_control();
         ST_DATA: decode_data_field();
         ST_CRC:  decode_crc_field();
         ST_ACK:  decode_ack_field();
         ST_EOF:  decode_eof_field();
+        
+        ST_IFS: begin
+          if (c_cfg.enable_special_decode && c_cfg.special_decode_ifs) begin
+            decode_ifs_or_overload();
+          end else begin
+            // If not decoding IFS specials, just consume IFS bits and go idle
+            bit b;
+            repeat (`CAN_INTERMISSION_BITS) sample_next_bit(b);
+            state = ST_IDLE;
+          end
+        end
+        
         default: state = ST_IDLE;
       endcase
     end
@@ -160,43 +194,82 @@ class can_monitor extends uvm_monitor;
     stuff_expected   = 0;
   endfunction
 
+  // ---------------------------------------------------------------------------------------
+  
   task automatic get_logical_bit(output bit lb);
     bit rb;
-
+    bit matched;
+    int unsigned ft;
+    bit delim_ok;
+  
     forever begin
       sample_next_bit(rb);
-
+  
       // consume stuff bit if expected
       if (stuff_expected) begin
         if (rb == last_logical_bit) begin
+          // Stuff error suspected
           tr.stuff_error_seen = 1'b1;
-          tr.ack_seen = 1'b0; // treat as not-acked / invalid
-          
-          `uvm_warning("CAN_MON","Stuff error suspected; resync to IDLE");
+  
+          // Try if this is actually SPECIAL flag mid-frame
+          try_decode_special_flag_midframe(matched, ft, delim_ok);
+  
+          if (matched) begin
+            // delimiter issue => FORM error on the CURRENT frame (safe: tr exists)
+            if (!delim_ok) tr.form_error_seen = 1'b1;
+  
+            // Publish the SPECIAL mid-frame event ONLY if enabled
+            if (c_cfg.publish_special_frames) begin
+              can_transaction sp;
+              sp = can_transaction::type_id::create("sp_midframe");
+              sp.t_start     = $time;
+              sp.t_end       = $time;
+              sp.src_node    = c_cfg.node_id;
+              sp.f_type      = `CAN_ERROR_FRAME; // mid-frame => ERROR by definition
+              sp.special_ctx = can_transaction::SPEC_CTX_MID_FRAME;
+              ap.write(sp);
+  
+              `uvm_info("CAN_MON",
+                $sformatf("[node%0d] OBS publish SPECIAL(MID_FRAME) ftype=%0d", c_cfg.node_id, sp.f_type),
+                UVM_LOW);
+            end
+  
+            // Always recover after a detected error flag
+            state = ST_IDLE;
+            return;
+          end
+  
+          // fallback: original recovery path
+          `uvm_warning("CAN_MON", "Stuff error suspected; resync to IDLE");
           recover_to_idle();
           state = ST_IDLE;
           return;
         end
+  
+        // It was a valid stuff bit, consume it and continue
         stuff_expected = 0;
         continue;
       end
-
+  
+      // normal (non-stuff) logical bit
       lb = rb;
-
+  
       if (lb == last_logical_bit) same_cnt++;
       else same_cnt = 1;
-
+  
       last_logical_bit = lb;
-
+  
       if (same_cnt == 5) begin
         stuff_expected = 1;
         same_cnt       = 0;
       end
-
+  
       return;
     end
   endtask
-  
+
+  // ---------------------------------------------------------------------------------------
+    
   task automatic recover_to_idle();
     
     int unsigned recessive_cnt = 0;
@@ -307,12 +380,27 @@ class can_monitor extends uvm_monitor;
     end
   endtask
 
-  task automatic decode_control_std();
+  // ---------------------------------------------------------------------------------------
+    
+  task automatic decode_control();
     bit b;
+    bit r1;
     bit r0;
     bit [3:0] dlc_value;
-
-    get_logical_bit(r0); if (state==ST_IDLE) return;
+    
+    // EXT has r1 then r0 (if strict mode), STD only r0
+    if ((tr.can_fmt == `CAN_ID_EXT) && c_cfg.strict_ext_ctrl) begin
+      get_logical_bit(r1); 
+      if (state==ST_IDLE) return;
+      crc15_update(r1);
+      if (r1 !== 1'b0) begin
+        tr.form_error_seen = 1'b1;
+        `uvm_warning("CAN_MON","EXT r1 not zero (form error)");
+      end
+    end
+    
+    get_logical_bit(r0); 
+    if (state==ST_IDLE) return;
     crc15_update(r0);
     if (r0 !== 1'b0) begin
       tr.form_error_seen = 1'b1;
@@ -321,17 +409,23 @@ class can_monitor extends uvm_monitor;
 
     dlc_value = 4'd0;
     for (int i = 3; i >= 0; i--) begin
-      get_logical_bit(b); if (state==ST_IDLE) return;
+      get_logical_bit(b); 
+      if (state==ST_IDLE) return;
       crc15_update(b);
       dlc_value[i] = b;
     end
 
-    tr.dlc = dlc_value;
-    if (tr.dlc > 8) tr.dlc = 8;
+    tr.dlc = (dlc_value > 8) ? 8 : dlc_value;
 
-    state = (tr.dlc == 0) ? ST_CRC : ST_DATA;
+    if (tr.f_type == `CAN_REMOTE_FRAME)
+      state = ST_CRC;
+    else
+      state = (tr.dlc == 0) ? ST_CRC : ST_DATA;
+    
   endtask
 
+  // ---------------------------------------------------------------------------------------
+  
   task automatic decode_data_field();
     bit b;
     bit [7:0] cur_byte;
@@ -351,6 +445,8 @@ class can_monitor extends uvm_monitor;
     state = ST_CRC;
   endtask
 
+  // ---------------------------------------------------------------------------------------
+    
   task automatic decode_crc_field();
     bit b;
 
@@ -367,16 +463,16 @@ class can_monitor extends uvm_monitor;
     tr.crc_error_seen = (crc_seq !== crc_calc);
 
     if (tr.crc_error_seen) begin
-      `uvm_warning("CAN_MON",
+      `uvm_info("CAN_MON",
         $sformatf("CRC ERROR: calc=0x%0h obs=0x%0h id=0x%0h",
-                  crc_calc, crc_seq, tr.id))
+                  crc_calc, crc_seq, tr.id),UVM_LOW)
     end
 
      // CRC delimiter is a RAW bit (not stuffed, not included in CRC)
     sample_next_bit(b);
     if (b !== 1'b1) begin
       tr.form_error_seen = 1'b1;
-      `uvm_warning("CAN_MON","CRC delimiter not recessive (FORM error)");
+      `uvm_info("CAN_MON","CRC delimiter not recessive (FORM error)",UVM_LOW);
     end
     state = ST_ACK;
   endtask
@@ -425,7 +521,7 @@ class can_monitor extends uvm_monitor;
 
     // (Keep warning behavior simple; scoreboard decides pass/fail based on exp.inj_ack_error)
     if (ack_slot == 1'b1)
-      `uvm_warning("CAN_MON","ACK error (no dominant ACK observed)");
+      `uvm_info("CAN_MON","ACK error (no dominant ACK observed)",UVM_LOW);
 
     // ACK delimiter
     #(sp_offset);
@@ -438,6 +534,8 @@ class can_monitor extends uvm_monitor;
     state = ST_EOF;
   endtask
 
+  // ---------------------------------------------------------------------------------------
+  
   task automatic decode_eof_field();
     bit b;
 
@@ -450,9 +548,189 @@ class can_monitor extends uvm_monitor;
     end
 
     end_frame_and_publish();
+    state = ST_IFS;
+  endtask
+  
+  // ----------------------------------------------------------------------------------------
+  task automatic decode_ifs_or_overload();
+    bit b;
+    bit matched;
+    int unsigned ft_unused;
+    bit delim_ok;
+  
+    // Intermission = 3 recessive bits
+    for (int i = 0; i < `CAN_INTERMISSION_BITS + 2; i++) begin
+      sample_next_bit(b);
+  
+      if (b === 1'b0) begin
+        // Dominant inside Intermission => candidate OVERLOAD
+        try_decode_special_flag_from_current_bit(matched, ft_unused, delim_ok);
+  
+        if (matched) begin
+          if (c_cfg.publish_special_frames) begin
+            can_transaction sp;
+            sp = can_transaction::type_id::create("sp_ifs");
+            sp.t_start     = $time;
+            sp.t_end       = $time;
+            sp.src_node    = c_cfg.node_id;
+            sp.f_type      = `CAN_OVERLOAD_FRAME;
+            sp.special_ctx = can_transaction::SPEC_CTX_INTERMISSION;
+            // You can store delim_ok somewhere if you added a field; otherwise just warn
+            ap.write(sp);
+            `uvm_info("CAN_MON_DBG",
+              $sformatf("[node%0d] wrote special sp.f_type=%0d (ERR=%0d OVL=%0d)",
+                        c_cfg.node_id, sp.f_type, `CAN_ERROR_FRAME, `CAN_OVERLOAD_FRAME),
+              UVM_LOW);
+            `uvm_info("CAN_MON",
+              $sformatf("[node%0d] OBS publish SPECIAL(INTERMISSION) ftype=%0d", c_cfg.node_id, sp.f_type),
+              UVM_LOW);
+          end
+          
+          overload_seen = 1;
+          
+          if (!delim_ok)
+            `uvm_warning("CAN_MON", "OVERLOAD delimiter not clean (non-recessive seen)");
+  
+          state = ST_IDLE;
+          return;
+        end
+  
+        // Not matched => treat as noise/error and recover
+        recover_to_idle();
+        state = ST_IDLE;
+        return;
+      end
+    end
+  
+    // Completed IFS normally => bus is truly idle
     state = ST_IDLE;
   endtask
+  
+   // ---------------------------------------------------------------------------------------
 
+   task automatic try_decode_special_flag_frame(
+    output bit          matched,
+    output int unsigned ftype,
+    output bit          delim_bad
+  );
+    bit b;
+    int dom_cnt;
+  
+    matched   = 1'b0;
+    ftype     = `CAN_DATA_FRAME;
+    delim_bad = 1'b0;
+  
+    // Sample CURRENT bit (already aligned)
+    sample_current_bit(b);
+    if (b !== 1'b0) return;
+  
+    dom_cnt = 1;
+  
+    // Remaining 5 bits of the flag
+    repeat (5) begin
+      sample_next_bit(b);
+      if (b === 1'b0) dom_cnt++;
+    end
+  
+    if (dom_cnt != 6) begin
+      matched = 1'b0;
+      return;
+    end
+  
+    matched = 1'b1;
+  
+    // Classify using driver hint if available
+    ftype = `CAN_ERROR_FRAME; // IDLE-detected special => treat as ERROR
+  
+    // delimiter (8 recessive). Don't spam warnings.
+    repeat (8) begin
+      sample_next_bit(b);
+      if (b !== 1'b1) delim_bad = 1'b1;
+    end
+  
+    recover_to_idle();
+  endtask
+        
+  // ---------------------------------------------------------------------------------------
+
+  task automatic try_decode_special_flag_midframe(
+    output bit          matched,
+    output int unsigned ftype,
+    output bit          delim_ok
+  );
+    bit b;
+    int dom_cnt;
+  
+    matched  = 1'b0;
+    ftype    = `CAN_ERROR_FRAME; // mid-frame => error by definition
+    delim_ok = 1'b1;
+  
+    // Confirm 6 consecutive dominant bits (0)
+    dom_cnt = 0;
+    repeat (6) begin
+      sample_next_bit(b);
+      if (b === 1'b0) dom_cnt++;
+    end
+  
+    if (dom_cnt != 6) begin
+      matched = 1'b0;
+      return;
+    end
+  
+    // Delimiter: 8 recessive bits (1)
+    repeat (8) begin
+      sample_next_bit(b);
+     if (b !== 1'b1) tr.form_error_seen = 1'b1;
+    end
+  
+    matched = 1'b1;
+    recover_to_idle();
+  endtask
+  
+  // ----------------------------------------------------------------------------------------
+  task automatic try_decode_special_flag_from_current_bit(
+    output bit          matched,
+    output int unsigned ftype,
+    output bit          delim_ok
+  );
+    bit b;
+    int dom_cnt;
+  
+    matched  = 1'b0;
+    ftype    = `CAN_OVERLOAD_FRAME; // caller decides; for IFS you will publish OVERLOAD
+    delim_ok = 1'b1;
+  
+    // We are called when we already saw the first dominant bit (0)
+    // and we are aligned on a bit boundary.
+  
+    dom_cnt = 1;
+  
+    // Check next 5 bits to confirm 6 consecutive dominant bits total
+    repeat (5) begin
+      sample_next_bit(b);
+      if (b === 1'b0) dom_cnt++;
+      else begin
+        // Not a special flag -> DO NOT recover; just return
+        matched = 1'b0;
+        return;
+      end
+    end
+  
+    // If we get here, we truly saw 6/6 dominant
+    matched = 1'b1;
+  
+    // Delimiter: 8 recessive bits (must be all 1)
+    repeat (8) begin
+      sample_next_bit(b);
+      if (b !== 1'b1) delim_ok = 1'b0;
+    end
+  
+    // Only now we recover (we consumed an entire special flag + delimiter)
+    recover_to_idle();
+  
+  endtask
+
+  
   // ===================================================================
   // sync/lifecycle
   // ===================================================================
@@ -463,6 +741,8 @@ class can_monitor extends uvm_monitor;
     end
   endtask
 
+  // ---------------------------------------------------------------------------------------
+  
   task automatic start_new_frame();
     tr = can_transaction::type_id::create("tr");
     tr.t_start  = $time;
@@ -487,70 +767,22 @@ class can_monitor extends uvm_monitor;
     crc_seq     = 15'h0000;
   endtask
 
+  // ---------------------------------------------------------------------------------------
+  
   task automatic end_frame_and_publish();
     tr.t_end = $time;
     ap.write(tr);
 
     `uvm_info("CAN_MON",
-      $sformatf("OBS node%0d: %s | ack_seen=%0b ack_driven=%0b crc_err=%0b form=%0b stuff=%0b",
-                c_cfg.node_id, tr.convert2string(),
-                tr.ack_seen, tr.ack_driven, tr.crc_error_seen,
-                tr.form_error_seen, tr.stuff_error_seen),
-      UVM_LOW);
+  $sformatf("[node%0d] OBS publish type=%s (ftype=%0d) id=0x%0h dlc=%0d ack_seen=%0b crc_err=%0b form=%0b stuff=%0b",
+            c_cfg.node_id, tr.ftype_str(), tr.f_type, tr.id, tr.dlc,
+            tr.ack_seen, tr.crc_error_seen, tr.form_error_seen, tr.stuff_error_seen),
+  UVM_LOW);
+
   endtask
   
-   // -------------------------------------------------------------------
-  // Special flag frame detector (ERROR / OVERLOAD flag-like patterns)
-  // IMPORTANT: must be a TASK because it uses timing (@ / #).
-  //
-  // It assumes you call it when the bus just went dominant while in IDLE.
-  // It will sample 6 bits. If they are all dominant -> "matched".
-  // Then it waits for delimiter recessive bits to resync.
-  // -------------------------------------------------------------------
-  task automatic try_decode_special_flag_frame(
-    output bit          matched,
-    output int unsigned ftype);
-    bit b;
-    int unsigned rec_cnt;
-  
-    matched = 1'b0;
-    ftype   = `CAN_DATA_FRAME; // default, unused if matched=0
-  
-    // We are aligned at a bit boundary when called from ST_IDLE
-  
-    // Detect 6 consecutive dominant bits (0)
-    for (int i = 0; i < 6; i++) begin
-      sample_next_bit(b);
-      if (b !== 1'b0) begin
-        // Not a special flag (ERROR/OVERLOAD)
-        matched = 1'b0;
-        return;
-      end
-    end
-  
-    // If we got here, it's 6 dominant bits => special flag
-    matched = 1'b1;
-  
-    // ERROR and OVERLOAD look the same on the wire (6 dominant bits).
-    // If you don’t have context, treating as ERROR is fine.
-    ftype = `CAN_ERROR_FRAME;
-  
-    `uvm_warning("CAN_MON",
-      "Special flag detected (6 dominant bits). Treating as ERROR/OVERLOAD-like and resyncing.");
-  
-    // Resync on delimiter: 8 recessive bits (1)
-    rec_cnt = 0;
-    while (rec_cnt < 8) begin
-      sample_next_bit(b);
-      if (b === 1'b1) rec_cnt++;
-      else            rec_cnt = 0;
-    end
-  
-    // After delimiter, finish recovery (EOF/IFS safety)
-    recover_to_idle();
-  endtask
 
-
+ 
 
 endclass : can_monitor
 

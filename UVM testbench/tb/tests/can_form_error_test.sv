@@ -39,7 +39,8 @@ class can_form_error_test extends uvm_test;
   
     env_cfg.has_reg_agent        = 0;
     env_cfg.has_can_scoreboard   = 1;
-  
+      
+
     foreach (env_cfg.c_cfg[i]) begin
       env_cfg.c_cfg[i].is_active  = UVM_ACTIVE;
       env_cfg.c_cfg[i].node_id    = i;
@@ -48,6 +49,8 @@ class can_form_error_test extends uvm_test;
       env_cfg.c_cfg[i].ack_enable       = 1'b1;
       env_cfg.c_cfg[i].expect_no_ack    = 1'b0;
       env_cfg.c_cfg[i].is_tx_in_progress = 1'b0; // driver will toggle it
+      env_cfg.c_cfg[i].enable_special_decode  = 0;
+    env_cfg.c_cfg[i].publish_special_frames = 0;
     end
   
     // ------------------------------------------------------------

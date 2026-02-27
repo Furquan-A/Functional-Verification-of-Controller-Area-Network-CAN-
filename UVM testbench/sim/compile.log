@@ -1,5 +1,5 @@
 Command: vcs -full64 -sverilog -timescale=1ns/1ps -ntb_opts uvm-1.2 -debug_access+all \
-+incdir+/home/users4/fl892838/can_uvm_project/rtl +incdir+/home/users4/fl892838/can_uvm_project/tb \
++define+CAN_WISHBONE_IF +incdir+/home/users4/fl892838/can_uvm_project/rtl +incdir+/home/users4/fl892838/can_uvm_project/tb \
 +incdir+/home/users4/fl892838/can_uvm_project/tb/pkg +incdir+/home/users4/fl892838/can_uvm_project/tb/can_interface \
 /home/users4/fl892838/can_uvm_project/rtl/can_bsp.v /home/users4/fl892838/can_uvm_project/rtl/can_btl.v \
 /home/users4/fl892838/can_uvm_project/rtl/can_crc.v /home/users4/fl892838/can_uvm_project/rtl/can_fifo.v \
@@ -11,7 +11,7 @@ Command: vcs -full64 -sverilog -timescale=1ns/1ps -ntb_opts uvm-1.2 -debug_acces
 /home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv -o /home/users4/fl892838/can_uvm_project/sim/simv \
 -l /home/users4/fl892838/can_uvm_project/sim/compile.log
                          Chronologic VCS (TM)
-         Version W-2024.09_Full64 -- Wed Feb 18 15:07:53 2026
+         Version W-2024.09_Full64 -- Thu Feb 26 03:31:24 2026
 
                     Copyright (c) 1991 - 2024 Synopsys, Inc.
    This software and the associated documentation are proprietary to Synopsys,
@@ -473,9 +473,7 @@ Parsing included file '/home/users4/fl892838/can_uvm_project/tb/env/can_env_conf
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
 Parsing included file '/home/users4/fl892838/can_uvm_project/tb/env/can_env.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
-Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_tx_seq.sv'.
-Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
-Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_arb_tx_seq.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_id_boundary_seq.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
 Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_arb_burst_seq.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
@@ -497,9 +495,21 @@ can_pkg
   See the SystemVerilog LRM(1800-2005), section 19.2.1.
 
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
-Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_smoke_test.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_ifs_overload_seq.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
-Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_arb_smoke_test.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_midframe_error_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_remote_response_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_ext_data_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_std_ext_arb_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_dlc_boundary_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/sequences/can_dut_init_seq.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_id_boundary_test.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
 Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_arb_burst_test.sv'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
@@ -521,6 +531,30 @@ can_pkg
   See the SystemVerilog LRM(1800-2005), section 19.2.1.
 
 Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_ifs_overload_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_midframe_error_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_remote_response_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_ext_frame_test.sv'.
+Parsing included file '/opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/uvm_macros.svh'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/tests/can_ext_frame_test.sv'.
+
+Note-[SV-LCM-PPWI] Package previously wildcard imported
+/home/users4/fl892838/can_uvm_project/tb/tests/can_ext_frame_test.sv, 5
+can_pkg
+  Package 'uvm_pkg' already wildcard imported. 
+  Ignoring uvm_pkg::*
+  See the SystemVerilog LRM(1800-2005), section 19.2.1.
+
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_std_ext_arb_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_dlc_boundary_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
+Parsing included file '/home/users4/fl892838/can_uvm_project/tb/tests/can_dut_init_test.sv'.
+Back to file '/home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv'.
 Parsing design file '/home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv'
 Parsing included file '/opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/uvm_macros.svh'.
 Back to file '/home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv'.
@@ -529,14 +563,6 @@ Top Level Modules:
        can_register_syn
        can_top_tb
 TimeScale is 1 ns / 1 ps
-
-Warning-[INTFDV] VCD dumping of interface/program/package
-/home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv, 103
-  Selective VCD dumping of interface 'can_if' is not supported.  Selective VCD
-  dumping for interfaces, packages and programs is not supported.
-  Use full VCD dumping '$dumpvars(0)', or use VPD or FSDB dumping, recompile 
-  with '-debug_access'.
-
 Starting vcs inline pass...
 13 modules and 0 UDP read.
 recompiling package vcs_paramclassrepository
@@ -553,17 +579,17 @@ recompiling module can_if
 recompiling package can_pkg
 recompiling module can_top_tb
 All of 13 modules done
-make: Warning: File 'filelist.cu' has modification time 3864 s in the future
-make[1]: Warning: File 'filelist.cu' has modification time 3864 s in the future
+make: Warning: File 'filelist.cu' has modification time 3846 s in the future
+make[1]: Warning: File 'filelist.cu' has modification time 3846 s in the future
 rm -f _cuarc*.so _csrc*.so pre_vcsobj_*.so share_vcsobj_*.so
 make[1]: warning:  Clock skew detected.  Your build may be incomplete.
-make[1]: Warning: File 'filelist.cu' has modification time 3864 s in the future
+make[1]: Warning: File 'filelist.cu' has modification time 3846 s in the future
 make[1]: warning:  Clock skew detected.  Your build may be incomplete.
 if [ -x /home/users4/fl892838/can_uvm_project/sim/simv ]; then chmod a-x /home/users4/fl892838/can_uvm_project/sim/simv; \
 fi
 g++  -o /home/users4/fl892838/can_uvm_project/sim/simv      -rdynamic  -Wl,-rpath='$ORIGIN'/simv.daidir \
 -Wl,-rpath=./simv.daidir -Wl,-rpath=/opt/synopsys/vcs/W-2024.09/linux64/lib -L/opt/synopsys/vcs/W-2024.09/linux64/lib \
--Wl,-rpath-link=./  /usr/lib64/libnuma.so.1 uvm_dpi.o   objs/amcQw_d.o   _1343388_archive_1.so \
+-Wl,-rpath-link=./  /usr/lib64/libnuma.so.1 uvm_dpi.o   objs/amcQw_d.o   _2186568_archive_1.so \
 SIM_l.o      rmapats_mop.o rmapats.o rmar.o rmar_nd.o  rmar_llvm_0_1.o rmar_llvm_0_0.o \
 -lvirsim -lerrorinf -lsnpsmalloc -lvfs    -lvcsnew -lsimprofile -luclinative /opt/synopsys/vcs/W-2024.09/linux64/lib/vcs_tls.o \
 -Wl,-whole-archive  -lvcsucli    -Wl,-no-whole-archive       ./../../sim/simv.daidir/vc_hdrs.o \
@@ -571,4 +597,4 @@ SIM_l.o      rmapats_mop.o rmapats.o rmar.o rmar_nd.o  rmar_llvm_0_1.o rmar_llvm
 -ldl 
 /home/users4/fl892838/can_uvm_project/sim/simv up to date
 make: warning:  Clock skew detected.  Your build may be incomplete.
-CPU time: 10.324 seconds to compile + .335 seconds to elab + .424 seconds to link
+CPU time: 10.185 seconds to compile + .337 seconds to elab + .455 seconds to link

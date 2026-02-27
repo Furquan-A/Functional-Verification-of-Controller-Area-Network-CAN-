@@ -24,6 +24,7 @@ VCS_CMD=(
   -timescale=1ns/1ps
   -ntb_opts uvm-1.2
   -debug_access+all
+  +define+CAN_WISHBONE_IF
   +incdir+"$PROJ_ROOT/rtl"
   +incdir+"$PROJ_ROOT/tb"
   +incdir+"$PROJ_ROOT/tb/pkg"
@@ -41,6 +42,7 @@ VCS_CMD=(
   "$PROJ_ROOT/rtl/can_register_syn.v"
   "$PROJ_ROOT/rtl/can_registers.v"
   "$PROJ_ROOT/rtl/can_top.v"
+  
 
   "$PROJ_ROOT/tb/interfaces/can_if.sv"
   "$PROJ_ROOT/tb/pkg/can_pkg.sv"

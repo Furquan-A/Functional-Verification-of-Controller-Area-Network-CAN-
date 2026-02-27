@@ -70,148 +70,137 @@ class can_driver extends uvm_driver #(can_transaction);
     can_transaction tr_local;
     bit success;
   
-    // release by default
     drive_tx(1'b1);
   
     forever begin
       seq_item_port.get_next_item(tr_local);
+        `uvm_info("CAN_DRV",$sformatf("[node%0d] DRV got item type=%s (ftype=%0d) id=0x%0h dlc=%0d",
+            c_cfg.node_id, tr_local.ftype_str(), tr_local.f_type,
+            tr_local.id, tr_local.dlc), UVM_LOW);
+
   
       tr_local.t_start  = $time;
       tr_local.src_node = c_cfg.node_id;
   
-      // ------------------------------------------------------------
-      // SPECIAL frames: ERROR / OVERLOAD
-      //   - send once
-      //   - no retries
-      //   - no ACK expectation
-      // ------------------------------------------------------------
+      // ---------------- SPECIAL FRAMES ----------------
       if ((tr_local.f_type == `CAN_ERROR_FRAME) || (tr_local.f_type == `CAN_OVERLOAD_FRAME)) begin
-        // bookkeeping
-        tr_local.arb_lost        = 1'b0;
-        tr_local.arb_lost_bit    = 0;
-        tr_local.ack_seen        = 1'b0;
-        tr_local.inj_crc_error   = 1'b0;
-        tr_local.inj_form_error  = 1'b0;
-        tr_local.inj_stuff_error = 1'b0;
-        tr_local.inj_ack_error   = 1'b0;
-  
-        attempt_ctr++;
-        tr_local.tx_attempt = attempt_ctr;
-  
-        // mark this node as TX during this attempt
+        
+        c_cfg.last_special_valid = 1'b1;
+        c_cfg.last_special_ftype = tr_local.f_type;
+        
         c_cfg.is_tx_in_progress = 1'b1;
-  
-        if (tr_local.f_type == `CAN_ERROR_FRAME)
-          send_error_frame(tr_local);
-        else
-          send_overload_frame(tr_local);
-  
+        
+       // allow forcing mid-frame special transmission 
+       if(tr_local.force_midframe) 
+         send_special_flag_frame_now(tr_local.f_type); // no idle wait
+       else
+         send_special_flag_frame(tr_local.f_type); // exixting behavior
+        
         c_cfg.is_tx_in_progress = 1'b0;
-  
-        tr_local.t_end = $time;
-  
-        // For special frames, publish as "expected" always
-        ap.write(tr_local);
-  
+
+        tr_local.ack_seen = 1'b0;
+        tr_local.t_end    = $time;
+        
+        // IMPORTANT: do NOT send to scoreboard expected queue unless you updated SB for specials
+        // ap.write(tr_local);  // <-- leave OFF for now
         seq_item_port.item_done();
         continue;
       end
   
-      // ------------------------------------------------------------
-      // NORMAL frames: DATA / REMOTE
-      //   retry until ACK or max_retries, unless arb loss
-      // ------------------------------------------------------------
+     // ---------------- NORMAL DATA/REMOTE PATH ----------------
       success = 0;
-  
+      
       for (int unsigned attempt = 0; attempt <= max_retries; attempt++) begin
-        // reset per attempt
         tr_local.arb_lost     = 1'b0;
         tr_local.arb_lost_bit = 0;
-        tr_local.ack_seen     = 1'b0;  // IMPORTANT: clear each attempt
-  
-        // Only inject on FIRST attempt; retries are clean
+        tr_local.ack_seen     = 1'b0;
+      
         if (attempt > 0) begin
           tr_local.inj_crc_error   = 1'b0;
           tr_local.inj_form_error  = 1'b0;
           tr_local.inj_stuff_error = 1'b0;
           tr_local.inj_ack_error   = 1'b0;
         end
-  
+      
         attempt_ctr++;
         tr_local.tx_attempt = attempt_ctr;
-  
-        // mark this node as TX during this attempt
+      
         c_cfg.is_tx_in_progress = 1'b1;
-  
         send_frame(tr_local);
-  
-        // after send_frame ends, we are done transmitting this attempt
         c_cfg.is_tx_in_progress = 1'b0;
-  
-        // SUCCESS condition: did not lose arbitration AND saw ACK
-        if (!tr_local.arb_lost && tr_local.ack_seen) begin
+      
+        // ------------------------------------------------------------
+        // Arbitration loss is NOT a failure. Do not retry here.
+        // Let the sequence/test schedule the next "round".
+        // Also, stopping retries keeps this node in RX so it can ACK winner.
+        // ------------------------------------------------------------
+        if (tr_local.arb_lost) begin
+          `uvm_info("CAN_ARB",
+            $sformatf("node%0d item done due to ARB-LOSS (id=0x%0h) at bit=%0d",
+                      c_cfg.node_id, tr_local.id, tr_local.arb_lost_bit),
+            UVM_LOW);
+          success = 0;
+          break;
+        end
+      
+        // Winner success: saw ACK
+        if (tr_local.ack_seen) begin
           success = 1;
           break;
         end
-  
-        // Retry reason print
-        if (tr_local.arb_lost) begin
-          `uvm_info("CAN_ARB",
-            $sformatf("node%0d retrying due to ARB-LOSS (id=0x%0h) attempt %0d/%0d",
-                      c_cfg.node_id, tr_local.id, attempt+1, max_retries),
-            UVM_LOW);
-        end
-        else begin
-          `uvm_info("CAN_ARB",
-            $sformatf("node%0d retrying due to NO-ACK (id=0x%0h) attempt %0d/%0d",
-                      c_cfg.node_id, tr_local.id, attempt+1, max_retries),
-            UVM_LOW);
-        end
+      
+        // Otherwise: NO-ACK -> retry
+        `uvm_info("CAN_ARB",
+          $sformatf("node%0d retrying due to NO-ACK (id=0x%0h) attempt %0d/%0d",
+                    c_cfg.node_id, tr_local.id, attempt+1, max_retries),
+          UVM_LOW);
       end
-  
-      if (!success) begin
-        `uvm_error("CAN_ARB",
-          $sformatf("node%0d failed after %0d retries (id=0x%0h)",
-                    c_cfg.node_id, max_retries, tr_local.id))
+      
+      // Only report failure for NO-ACK cases (not for ARB-LOSS)
+      if (!success && !tr_local.arb_lost) begin
+        `uvm_info("CAN_ARB",
+          $sformatf("node%0d failed after %0d retries (NO-ACK) (id=0x%0h)",
+                    c_cfg.node_id, max_retries, tr_local.id),UVM_LOW)
       end
-  
+      
       tr_local.t_end = $time;
-  
-      // publish only if success (your existing behavior)
+      
+      // Publish only if winner success
       if (success) ap.write(tr_local);
-  
+      
       seq_item_port.item_done();
     end
   endtask
-
-
-  // ===========================================================================
-  // primitives
-  // ===========================================================================
-  task automatic drive_tx(bit level);
-    @vif.can_cb;
-    vif.can_cb.tb_tx[c_cfg.node_id] <= level;
-  endtask
-
-  task automatic drive_raw_bit(bit level);
-    bit bus_sample;
-
-    @vif.can_cb;
-    vif.can_cb.tb_tx[c_cfg.node_id] <= level;
-
-    #(sp_offset);
-    bus_sample = vif.rx_i;
-
-    if (in_arbitration && !lost_arbitration) begin
-      if ((level === 1'b1) && (bus_sample === 1'b0)) begin
-        lost_arbitration = 1'b1;
-        vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1; // release
+  
+  
+  
+    // ===========================================================================
+    // primitives
+    // ===========================================================================
+    task automatic drive_tx(bit level);
+      @vif.can_cb;
+      vif.can_cb.tb_tx[c_cfg.node_id] <= level;
+    endtask
+  
+    task automatic drive_raw_bit(bit level);
+      bit bus_sample;
+  
+      @vif.can_cb;
+      vif.can_cb.tb_tx[c_cfg.node_id] <= level;
+  
+      #(sp_offset);
+      bus_sample = vif.rx_i;
+  
+      if (in_arbitration && !lost_arbitration) begin
+        if ((level === 1'b1) && (bus_sample === 1'b0)) begin
+          lost_arbitration = 1'b1;
+          vif.can_cb.tb_tx[c_cfg.node_id] <= 1'b1; // release
+        end
+        arb_bit_idx++;
       end
-      arb_bit_idx++;
-    end
-
-    #(bit_time - sp_offset);
-  endtask
+  
+      #(bit_time - sp_offset);
+    endtask
 
   function void init_stuffing(bit first_bit);
     last_tx_bit = first_bit;
@@ -300,7 +289,7 @@ class can_driver extends uvm_driver #(can_transaction);
 
   task automatic handle_arbitration_loss(ref can_transaction tr_in);
     tr_in.arb_lost = 1'b1;
-    tr_in.arb_lost_bit = (arb_bit_idx == 0) ? 0 : (arb_bit_idx - 1);
+    tr_in.arb_lost_bit = arb_bit_idx ;
 
     // become receiver immediately
     c_cfg.is_tx_in_progress = 1'b0;
@@ -318,7 +307,7 @@ class can_driver extends uvm_driver #(can_transaction);
 
     wait_frame_end_after_loss();
   endtask
-
+  
   // ===========================================================================
   // send_frame with injection hooks + ACK sampling + EOF
   // ===========================================================================
@@ -390,7 +379,7 @@ class can_driver extends uvm_driver #(can_transaction);
       if (lost_arbitration) begin handle_arbitration_loss(tr_in); return; end
     end
     else begin
-      for (int i = 28; i >= 18; i--) begin
+      for (int i = 28; i >= 18; i--) begin // ---------- EXTENDED FRAME
         drive_frame_bit(tr_in.id[i]);
         if (lost_arbitration) begin handle_arbitration_loss(tr_in); return; end
       end
@@ -416,8 +405,13 @@ class can_driver extends uvm_driver #(can_transaction);
     in_arbitration = 1'b0;
   
     // CONTROL
+    
+    if ((tr_in.can_fmt == `CAN_ID_EXT) && c_cfg.strict_ext_ctrl) begin
+      drive_frame_bit(1'b0); // r1
+    end
     drive_frame_bit(1'b0); // r0
     for (int i = 3; i >= 0; i--) drive_frame_bit(dlc_clamped[i]);
+
   
     // DATA (only for DATA frames)
     if (tr_in.f_type == `CAN_DATA_FRAME) begin
@@ -483,12 +477,12 @@ class can_driver extends uvm_driver #(can_transaction);
     // Release idle (safety)
     drive_tx(1'b1);
   
-    `uvm_info("CAN_TX",
-      $sformatf("node%0d TX end id=0x%0h arb_lost=%0b ack_seen=%0b inj_crc=%0b inj_stuff=%0b inj_form=%0b",
-                c_cfg.node_id, tr_in.id, tr_in.arb_lost, tr_in.ack_seen,
-                tr_in.inj_crc_error, tr_in.inj_stuff_error, tr_in.inj_form_error),
-      UVM_LOW);
-  
+    `uvm_info("CAN_TX", $sformatf("[node%0d] TX %s id=0x%0h dlc=%0d attempt=%0d inj(CRC=%0b STUFF=%0b FORM=%0b ACK=%0b)",
+            c_cfg.node_id, tr_in.ftype_str(), tr_in.id, dlc_clamped,
+            tr_in.tx_attempt, tr_in.inj_crc_error, tr_in.inj_stuff_error,
+            tr_in.inj_form_error, tr_in.inj_ack_error),
+  UVM_LOW);
+
   endtask
   
  // ===================================================================
@@ -498,61 +492,53 @@ class can_driver extends uvm_driver #(can_transaction);
   // - then 3 intermission bits (recessive)
   // ===================================================================
 
-  task automatic send_error_frame(can_transaction tr_in);
-    bit flag_level;
+  task automatic send_special_flag_frame(int unsigned ftype);
+
     wait_for_idle_bus();
-
-    flag_level = (tr_in.err_active) ? 1'b0 : 1'b1;
-
-    stuff_en = 1'b0;
-    crc_en   = 1'b0;
-    in_arbitration = 1'b0;
-
-    `uvm_info("CAN_TX",
-      $sformatf("node%0d TX ERROR-FRAME (active=%0b reason=%0d)",
-                c_cfg.node_id, tr_in.err_active, tr_in.err_reason),
-      UVM_LOW);
-
-    // 6-bit error flag
-    repeat (6) drive_raw_bit(flag_level);
-
-    // 8-bit error delimiter (recessive)
+  
+    // Special flags are NOT stuffed, no CRC, no arbitration
+    stuff_en        = 1'b0;
+    crc_en          = 1'b0;
+    in_arbitration  = 1'b0;
+    lost_arbitration= 1'b0;
+  
+    // ACTIVE flag = 6 dominant bits
+    repeat (6) drive_raw_bit(1'b0);
+  
+    // delimiter = 8 recessive bits
     repeat (8) drive_raw_bit(1'b1);
-
-    // intermission
+  
+    // Intermission (3 recessive) helps monitors align
     repeat (`CAN_INTERMISSION_BITS) drive_raw_bit(1'b1);
-
+  
+    // release (idle)
     drive_tx(1'b1);
+  
+    `uvm_info("CAN_TX",$sformatf("[node%0d] TX SPECIAL type=%0d (6 dom + 8 delim + IFS)",
+            c_cfg.node_id, ftype),UVM_LOW);  
   endtask
-
-
-  task automatic send_overload_frame(can_transaction tr_in);
-    bit flag_level;
-    wait_for_idle_bus();
-
-    flag_level = (tr_in.ovl_active) ? 1'b0 : 1'b1;
-
-    stuff_en = 1'b0;
-    crc_en   = 1'b0;
-    in_arbitration = 1'b0;
-
+  
+  // -------------------------------------------------------------------------------------
+  
+  task automatic send_special_flag_frame_now(int unsigned ftype);
+  
+    // start at next boundary and immediately drive the flag 
+    @vif.can_cb;
+    
+    // 6 dominant bits ( active flag shape)
+    repeat(6) drive_raw_bit(1'b0);
+    
+    // 8 Recessive Delimiter bits 
+    repeat(8) drive_raw_bit(1'b1);
+    
+    //release + intermission 
+    drive_raw_bit(1'b1);
+    repeat(`CAN_INTERMISSION_BITS)drive_raw_bit(1'b1);
+    
     `uvm_info("CAN_TX",
-      $sformatf("node%0d TX OVERLOAD-FRAME (active=%0b)",
-                c_cfg.node_id, tr_in.ovl_active),
-      UVM_LOW);
-
-    // 6-bit overload flag (same on-wire shape as error flag)
-    repeat (6) drive_raw_bit(flag_level);
-
-    // 8-bit overload delimiter (recessive)
-    repeat (8) drive_raw_bit(1'b1);
-
-    // intermission
-    repeat (`CAN_INTERMISSION_BITS) drive_raw_bit(1'b1);
-
-    drive_tx(1'b1);
+    $sformatf("node%0d FORCED mid-frame SPECIAL flag ftype=%0d", c_cfg.node_id, ftype),
+    UVM_LOW);
   endtask
-
 
 endclass : can_driver
 

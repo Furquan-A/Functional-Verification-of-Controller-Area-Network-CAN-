@@ -22,20 +22,35 @@ package can_pkg;
   `include "env/can_scoreboard.sv"
   `include "env/can_env_config.sv"
   `include "env/can_env.sv"
-
-  `include "sequences/can_tx_seq.sv"
-  `include "sequences/can_arb_tx_seq.sv"
+  
+  // --- SEQUENCES ----
+  `include "sequences/can_id_boundary_seq.sv"
   `include "sequences/can_arb_burst_seq.sv"
   `include "sequences/can_ack_error_seq.sv"
   `include "sequences/can_crc_error_seq.sv"
   `include "sequences/can_stuff_error_seq.sv"
   `include "sequences/can_form_error_seq.sv"
-  `include "tests/can_smoke_test.sv"
-  `include "tests/can_arb_smoke_test.sv"
+  `include "sequences/can_ifs_overload_seq.sv"
+  `include "sequences/can_midframe_error_seq.sv"
+  `include "sequences/can_remote_response_seq.sv"
+  `include "sequences/can_ext_data_seq.sv"
+  `include "sequences/can_std_ext_arb_seq.sv"
+  `include "sequences/can_dlc_boundary_seq.sv"
+  `include "sequences/can_dut_init_seq.sv"
+  
+  // --- TESTS ----
+  `include "tests/can_id_boundary_test.sv"
   `include "tests/can_arb_burst_test.sv"
   `include "tests/can_ack_error_test.sv"
   `include "tests/can_crc_error_test.sv"
   `include "tests/can_stuff_error_test.sv"
   `include "tests/can_form_error_test.sv"
+  `include "tests/can_ifs_overload_test.sv"
+  `include "tests/can_midframe_error_test.sv"
+  `include "tests/can_remote_response_test.sv"
+  `include "tests/can_ext_frame_test.sv"
+  `include "tests/can_std_ext_arb_test.sv"
+  `include "tests/can_dlc_boundary_test.sv"
+  `include "tests/can_dut_init_test.sv"
 endpackage : can_pkg
 `endif

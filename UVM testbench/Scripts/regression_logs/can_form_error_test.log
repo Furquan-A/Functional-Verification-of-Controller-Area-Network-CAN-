@@ -1,0 +1,123 @@
+[INFO] Running simulation...
+[CMD ] /home/users4/fl892838/can_uvm_project/sim/simv +UVM_TESTNAME=can_form_error_test -l /home/users4/fl892838/can_uvm_project/sim/run.log
+Info: [VCS_SAVE_RESTORE_INFO] ASLR (Address Space Layout Randomization) is detected on the machine. To enable $save functionality, ASLR will be switched off and simv re-executed.
+Please use '-no_save' simv switch to avoid re-execution or '-suppress=ASLR_DETECTED_INFO' to suppress this message.
+Chronologic VCS simulator copyright 1991-2024
+Contains Synopsys proprietary information.
+Compiler version W-2024.09_Full64; Runtime version W-2024.09_Full64;  Feb 26 01:44 2026
+UVM_INFO /opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/base/uvm_root.svh(402) @ 0: reporter [UVM/RELNOTES] 
+----------------------------------------------------------------
+UVM-1.2.Synopsys
+(C) 2007-2014 Mentor Graphics Corporation
+(C) 2007-2014 Cadence Design Systems, Inc.
+(C) 2006-2014 Synopsys, Inc.
+(C) 2011-2013 Cypress Semiconductor Corp.
+(C) 2013-2014 NVIDIA Corporation
+----------------------------------------------------------------
+
+  ***********       IMPORTANT RELEASE NOTES         ************
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_NO_DEPRECATED undefined.
+  See http://www.eda.org/svdb/view.php?id=3313 for more details.
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+  See http://www.eda.org/svdb/view.php?id=3770 for more details.
+
+      (Specify +UVM_NO_RELNOTES to turn off this notice)
+
+[0] can_if built in   LEGACY mode
+UVM_INFO @ 0: reporter [RNTST] Running test can_form_error_test...
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(63) @ 0: uvm_test_top.m_env.c_agent0.drvh [CAN_DRV] Driver ready: node_id=0 bit_time=100000 sp_offset=75000 (75%) max_retries=5
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(72) @ 0: uvm_test_top.m_env.c_agent0.monh [CAN_MON] Monitor ready: node_id=0 bit_time=100000 sp_offset=75000 (75%) ack_en=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_sequencer.sv(24) @ 0: uvm_test_top.m_env.c_agent0.seqrh [uvm_test_top.m_env.c_agent0.seqrh] Inside Build_phase
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(63) @ 0: uvm_test_top.m_env.c_agent1.drvh [CAN_DRV] Driver ready: node_id=1 bit_time=100000 sp_offset=75000 (75%) max_retries=5
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(72) @ 0: uvm_test_top.m_env.c_agent1.monh [CAN_MON] Monitor ready: node_id=1 bit_time=100000 sp_offset=75000 (75%) ack_en=1
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_sequencer.sv(24) @ 0: uvm_test_top.m_env.c_agent1.seqrh [uvm_test_top.m_env.c_agent1.seqrh] Inside Build_phase
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(63) @ 0: uvm_test_top.m_env.c_agent2.drvh [CAN_DRV] Driver ready: node_id=2 bit_time=100000 sp_offset=75000 (75%) max_retries=5
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(72) @ 0: uvm_test_top.m_env.c_agent2.monh [CAN_MON] Monitor ready: node_id=2 bit_time=100000 sp_offset=75000 (75%) ack_en=1
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_sequencer.sv(24) @ 0: uvm_test_top.m_env.c_agent2.seqrh [uvm_test_top.m_env.c_agent2.seqrh] Inside Build_phase
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(43) @ 0: uvm_test_top.m_env.c_sb [CAN_SB] Scoreboard expecting 3 OBS per EXP
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/tests/can_form_error_test.sv(86) @ 0: uvm_test_top [FORM_TEST] Starting FORM-error sequence on node0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(77) @ 10000: uvm_test_top.m_env.c_agent0.drvh [CAN_DRV] [node0] DRV got item type=DATA (ftype=0) id=0x123 dlc=4
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(423) @ 5430000: uvm_test_top.m_env.c_agent0.drvh [CAN_TX] TX attempt=1 id=0x123 inj_crc=0 inj_form=1 inj_stuff=0 f_type=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(448) @ 7030000: uvm_test_top.m_env.c_agent0.drvh [CAN_INJ] node0 injected FORM error (CRC delimiter dominant)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(475) @ 7150000: uvm_test_top.m_env.c_agent0.monh [CAN_MON] CRC delimiter not recessive (FORM error)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(475) @ 7150000: uvm_test_top.m_env.c_agent1.monh [CAN_MON] CRC delimiter not recessive (FORM error)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(475) @ 7150000: uvm_test_top.m_env.c_agent2.monh [CAN_MON] CRC delimiter not recessive (FORM error)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(524) @ 7250000: uvm_test_top.m_env.c_agent0.monh [CAN_MON] ACK error (no dominant ACK observed)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(524) @ 7250000: uvm_test_top.m_env.c_agent1.monh [CAN_MON] ACK error (no dominant ACK observed)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(524) @ 7250000: uvm_test_top.m_env.c_agent2.monh [CAN_MON] ACK error (no dominant ACK observed)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(480) @ 8030000: uvm_test_top.m_env.c_agent0.drvh [CAN_TX] [node0] TX DATA id=0x123 dlc=4 attempt=1 inj(CRC=0 STUFF=0 FORM=0 ACK=0)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(153) @ 8030000: uvm_test_top.m_env.c_agent0.drvh [CAN_ARB] node0 retrying due to NO-ACK (id=0x123) attempt 1/5
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 8050000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node0 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 8050000: uvm_test_top.m_env.c_agent0.monh [CAN_MON] [node0] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=0 crc_err=0 form=1 stuff=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 8050000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node1 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 8050000: uvm_test_top.m_env.c_agent1.monh [CAN_MON] [node1] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=0 crc_err=0 form=1 stuff=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 8050000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node2 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 8050000: uvm_test_top.m_env.c_agent2.monh [CAN_MON] [node2] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=0 crc_err=0 form=1 stuff=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(423) @ 13450000: uvm_test_top.m_env.c_agent0.drvh [CAN_TX] TX attempt=2 id=0x123 inj_crc=0 inj_form=0 inj_stuff=0 f_type=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_driver.sv(480) @ 16050000: uvm_test_top.m_env.c_agent0.drvh [CAN_TX] [node0] TX DATA id=0x123 dlc=4 attempt=2 inj(CRC=0 STUFF=0 FORM=0 ACK=0)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(60) @ 16050000: uvm_test_top.m_env.c_sb [CAN_SB_ARB] [WINNER] node0 EXP accepted as winner id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(67) @ 16050000: uvm_test_top.m_env.c_sb [CAN_SB] Expected frame queued (ID=0x123)
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/sequences/can_form_error_seq.sv(51) @ 16050000: uvm_test_top.m_env.c_agent0.seqrh@@seq [CAN_FORM_ERR_SEQ] Sent FORM-BAD frame (inj_form_error=1, auto-clear on retry): id=0x123 dlc=4
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node0 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 16070000: uvm_test_top.m_env.c_agent0.monh [CAN_MON] [node0] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=1 crc_err=0 form=0 stuff=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node1 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 16070000: uvm_test_top.m_env.c_agent1.monh [CAN_MON] [node1] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=1 crc_err=0 form=0 stuff=0
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(84) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB] OBS queued from node2 id=0x123
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(201) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=16070000 | node=0 | EXP=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=2 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=0 crc_err=0 form=0 stuff=0 | OBS=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=0 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=0 crc_err=0 form=0 stuff=0 | PASS
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(201) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=16070000 | node=1 | EXP=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=2 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=0 crc_err=0 form=0 stuff=0 | OBS=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=0 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=1 crc_err=0 form=0 stuff=0 | PASS
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(201) @ 16070000: uvm_test_top.m_env.c_sb [CAN_SB_TXN] TIME=16070000 | node=2 | EXP=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=2 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=0 crc_err=0 form=0 stuff=0 | OBS=CAN[STD DATA] id=0x123 dlc=4 bytes=4 attempt=0 data=d0 d1 d2 d3  | ack_seen=1 ack_driven=1 crc_err=0 form=0 stuff=0 | PASS
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/agents/can_agent/can_monitor.sv(776) @ 16070000: uvm_test_top.m_env.c_agent2.monh [CAN_MON] [node2] OBS publish type=DATA (ftype=0) id=0x123 dlc=4 ack_seen=1 crc_err=0 form=0 stuff=0
+UVM_INFO /opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/base/uvm_objection.svh(1276) @ 316050000: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+UVM_INFO /home/users4/fl892838/can_uvm_project/tb/env/can_scoreboard.sv(239) @ 316050000: uvm_test_top.m_env.c_sb [CAN_SB] Scoreboard summary: Pass=1 Fail=0
+UVM_INFO /opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/base/uvm_report_catcher.svh(705) @ 316050000: reporter [UVM/REPORT/CATCHER] 
+--- UVM Report catcher Summary ---
+
+
+Number of demoted UVM_FATAL reports  :    0
+Number of demoted UVM_ERROR reports  :    0
+Number of demoted UVM_WARNING reports:    0
+Number of caught UVM_FATAL reports   :    0
+Number of caught UVM_ERROR reports   :    0
+Number of caught UVM_WARNING reports :    0
+
+UVM_INFO /opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/base/uvm_report_server.svh(904) @ 316050000: reporter [UVM/REPORT/SERVER] 
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :   47
+UVM_WARNING :    0
+UVM_ERROR :    0
+UVM_FATAL :    0
+** Report counts by id
+[CAN_ARB]     1
+[CAN_DRV]     4
+[CAN_FORM_ERR_SEQ]     1
+[CAN_INJ]     1
+[CAN_MON]    15
+[CAN_SB]     9
+[CAN_SB_ARB]     1
+[CAN_SB_TXN]     3
+[CAN_TX]     4
+[FORM_TEST]     1
+[RNTST]     1
+[TEST_DONE]     1
+[UVM/RELNOTES]     1
+[UVM/REPORT/CATCHER]     1
+[uvm_test_top.m_env.c_agent0.seqrh]     1
+[uvm_test_top.m_env.c_agent1.seqrh]     1
+[uvm_test_top.m_env.c_agent2.seqrh]     1
+
+$finish called from file "/opt/synopsys/vcs/W-2024.09/etc/uvm-1.2/base/uvm_root.svh", line 527.
+$finish at simulation time            316050000
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 316050000 ps
+CPU Time:      0.340 seconds;       Data structure size:   0.7Mb
+Thu Feb 26 01:44:18 2026
+[OK] Run done.
+[OK] Log: /home/users4/fl892838/can_uvm_project/sim/run.log
+[OK] Pretty log: /home/users4/fl892838/can_uvm_project/sim/pretty.log
+[OK] Txn log   : /home/users4/fl892838/can_uvm_project/sim/txn.log

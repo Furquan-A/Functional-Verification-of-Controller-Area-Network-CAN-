@@ -1,0 +1,28 @@
+CAN UVM Agent Regression
+Run: Thu Feb 26 01:43:35 PST 2026
+============================================================
+TEST                                   STATUS   FATAL   ERROR   WARNING  
+-----------------------------------------------------------------------
+
+  Basic Frame Tests
+  can_ext_frame_test                   PASS     0       0       0        
+  can_dlc_boundary_test                PASS     0       0       0        
+  can_id_boundary_test                 PASS     0       0       0        
+
+  Arbitration Tests
+  can_std_ext_arb_test                 PASS     0       0       0        
+  can_arb_burst_test                   PASS     0       0       0        
+
+  Special Frame Tests
+  can_remote_response_test             PASS     0       0       0        
+  can_ifs_overload_test                PASS     0       0       0        
+  can_midframe_error_test              PASS     0       0       0        
+
+  Error Injection Tests
+  can_crc_error_test                   WARN     0       0       6        
+  can_stuff_error_test                 PASS     0       0       0        
+  can_form_error_test                  WARN     0       0       6        
+  can_ack_error_test                   FAIL     0       1       12       
+
+-----------------------------------------------------------------------
+Total=12  Pass=9  Warn=2  Fail=1  Skip=0

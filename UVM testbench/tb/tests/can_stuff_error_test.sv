@@ -24,6 +24,8 @@ class can_stuff_error_test extends uvm_test;
     env_cfg.resize(3, 0);
     env_cfg.has_reg_agent = 0;
     env_cfg.has_can_scoreboard = 1;
+    
+    
 
     foreach (env_cfg.c_cfg[i]) begin
       env_cfg.c_cfg[i].is_active  = UVM_ACTIVE;
@@ -31,6 +33,8 @@ class can_stuff_error_test extends uvm_test;
 
       // Only receivers ACK. Let node1 & node2 ACK, node0 does not.
       env_cfg.c_cfg[i].ack_enable = (i != 0);
+      env_cfg.c_cfg[i].enable_special_decode  = 0;
+    env_cfg.c_cfg[i].publish_special_frames = 0;  
     end
 
     begin

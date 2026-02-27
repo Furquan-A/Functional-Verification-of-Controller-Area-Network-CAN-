@@ -32,7 +32,7 @@ class can_transaction extends uvm_sequence_item;
   rand bit             can_fmt;   // `CAN_ID_STD or `CAN_ID_EXT (only meaningful for DATA/REMOTE)
   rand bit [28:0]      id;        // valid bits depend on can_fmt (only meaningful for DATA/REMOTE)
   rand bit [3:0]       dlc;       // Classic CAN: 0..8 (only meaningful for DATA/REMOTE/REMOTE)
-  rand bit f_type;   // DATA/REMOTE/ERROR/OVERLOAD
+  rand logic[1:0] f_type;   // DATA/REMOTE/ERROR/OVERLOAD
   rand byte unsigned   data[];    // payload (DATA only)
 
   // ---------------- ERROR / OVERLOAD details ----------------
@@ -50,12 +50,25 @@ class can_transaction extends uvm_sequence_item;
     ERR_BIT1         = 6,
     ERR_OTHER        = 7
   } can_error_reason_e;
+  
+  typedef enum int unsigned { 
+    SPEC_CTX_NONE=0, 
+    SPEC_CTX_MID_FRAME=1, 
+    SPEC_CTX_INTERMISSION=2,
+    SPEC_CTX_IDLE = 3
+  } spec_ctx_e;
+    
+  spec_ctx_e special_ctx;
+
+  
+
 
   rand bit              err_active;     // 1=Active Error Flag (dominant), 0=Passive (recessive)
   rand can_error_reason_e err_reason;   // Optional classification for error frame (coverage/logging)
+  rand bit force_midframe; // =1 => driver sends special immediately ( no idle wait)
 
   // Overload frame “reason” is usually not modeled deeply; keep a knob anyway
-  rand bit              ovl_active;     // 1=dominant overload flag (typical), 0=recessive (rare/useful for debug)
+  rand bit              ovl_active;     // 1=dominant overload flag (typical), 0=recessive (rare/useful for debu)
 
   // ---------- Error injection knobs -----------
   // (Used when you transmit a DATA/REMOTE frame and want to corrupt it)
@@ -120,6 +133,8 @@ class can_transaction extends uvm_sequence_item;
     `uvm_field_int(arb_lost,         UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
     `uvm_field_int(arb_lost_bit,     UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
     `uvm_field_int(tx_attempt,       UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
+    `uvm_field_enum(spec_ctx_e,special_ctx, UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
+    `uvm_field_int(force_midframe,       UVM_DEFAULT | UVM_NOPACK | UVM_NOCOMPARE)
   `uvm_object_utils_end
 
   // ---------------- CONSTRAINTS ---------------
@@ -159,6 +174,9 @@ class can_transaction extends uvm_sequence_item;
     (f_type == `CAN_ERROR_FRAME)    -> (err_active inside {0,1});
     (f_type == `CAN_OVERLOAD_FRAME) -> (ovl_active inside {0,1});
   }
+  
+  constraint c_force_midframe_only_special {
+    (f_type inside {`CAN_DATA_FRAME,`CAN_REMOTE_FRAME}) -> (force_midframe ==0);}
 
   function new(string name = "can_transaction");
     super.new(name);
@@ -171,6 +189,14 @@ class can_transaction extends uvm_sequence_item;
     string typ_s;
 
     fmt_s = (can_fmt==`CAN_ID_STD) ? "STD" : "EXT";
+    
+    case (f_type)
+      `CAN_DATA_FRAME:     typ_s = "DATA";
+      `CAN_REMOTE_FRAME:   typ_s = "REMOTE";
+      `CAN_ERROR_FRAME:    typ_s = "ERROR";
+      `CAN_OVERLOAD_FRAME: typ_s = "OVERLOAD";
+      default:             typ_s = "UNK";
+    endcase
 
     // For ERROR/OVERLOAD, id/dlc aren’t meaningful, but we still show them
     s = $sformatf("CAN[%s %s] id=0x%0h dlc=%0d bytes=%0d attempt=%0d",
@@ -194,6 +220,16 @@ class can_transaction extends uvm_sequence_item;
                    ack_seen, ack_driven, crc_error_seen, form_error_seen, stuff_error_seen)};
 
     return s;
+  endfunction
+  
+  function string ftype_str();
+    case (f_type)
+      `CAN_DATA_FRAME:     return "DATA";
+      `CAN_REMOTE_FRAME:   return "REMOTE";
+      `CAN_ERROR_FRAME:    return "ERROR";
+      `CAN_OVERLOAD_FRAME: return "OVERLOAD";
+      default:             return $sformatf("UNK(%0d)", f_type);
+    endcase
   endfunction
 
 endclass : can_transaction

@@ -31,6 +31,8 @@ class can_crc_error_test extends uvm_test;
     env_cfg.resize(3, 0);
     env_cfg.has_reg_agent        = 0;
     env_cfg.has_can_scoreboard   = 1;
+      
+
 
     foreach (env_cfg.c_cfg[i]) begin
       env_cfg.c_cfg[i].is_active  = UVM_ACTIVE;
@@ -47,7 +49,8 @@ class can_crc_error_test extends uvm_test;
 
       // arbitration doesn't matter here (only node0 transmits), but keep enabled
       env_cfg.c_cfg[i].arbitration_enable = 1'b1;
-
+      env_cfg.c_cfg[i].enable_special_decode  = 0;
+    env_cfg.c_cfg[i].publish_special_frames = 0;
       // error injection knobs here are per-transaction, not per-node
     end
 
