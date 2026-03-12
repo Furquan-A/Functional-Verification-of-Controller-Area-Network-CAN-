@@ -37,6 +37,17 @@ package can_pkg;
   `include "sequences/can_std_ext_arb_seq.sv"
   `include "sequences/can_dlc_boundary_seq.sv"
   `include "sequences/can_dut_init_seq.sv"
+  `include "sequences/can_dut_tx_seq.sv"  
+  `include "sequences/can_dut_rx_seq.sv"
+  `include "sequences/can_dut_crc_err_seq.sv"
+  `include "sequences/can_dut_stuff_err_seq.sv"
+  `include "sequences/can_dut_ack_err_seq.sv"
+  `include "sequences/can_dut_form_err_seq.sv"
+  `include "sequences/can_dut_remote_rx_seq.sv"
+  `include "sequences/can_dut_normal_mode_rx_seq.sv"
+  `include "sequences/can_dut_listen_only_mode_seq.sv"
+  `include "sequences/can_dut_self_test_mode_seq.sv"
+  `include "sequences/can_dut_acceptance_filter_seq.sv"
   
   // --- TESTS ----
   `include "tests/can_id_boundary_test.sv"
@@ -52,5 +63,17 @@ package can_pkg;
   `include "tests/can_std_ext_arb_test.sv"
   `include "tests/can_dlc_boundary_test.sv"
   `include "tests/can_dut_init_test.sv"
+  `include "tests/can_dut_tx_test.sv"
+  `include "tests/can_dut_rx_test.sv"
+  `include "tests/can_dut_crc_err_test.sv"
+  `include "tests/can_dut_stuff_err_test.sv"
+  `include "tests/can_dut_ack_err_test.sv"
+  `include "tests/can_dut_form_err_test.sv"
+  `include "tests/can_dut_remote_rx_test.sv"
+  `include "tests/can_dut_normal_mode_rx_test.sv"
+  `include "tests/can_dut_listen_only_mode_test.sv"
+  `include "tests/can_dut_self_test_mode_test.sv"
+  `include "tests/can_dut_acceptance_filter_test.sv"
+  
 endpackage : can_pkg
 `endif

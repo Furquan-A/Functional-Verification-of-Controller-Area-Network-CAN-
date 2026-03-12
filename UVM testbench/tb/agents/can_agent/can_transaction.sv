@@ -161,7 +161,7 @@ class can_transaction extends uvm_sequence_item;
   // If you explicitly send an ERROR or OVERLOAD frame, you generally do NOT
   // simultaneously request injection on it (injection is for DATA/REMOTE corruption).
   constraint c_injection_only_for_data_remote {
-    (f_type inside {`CAN_DATA_FRAME,`CAN_REMOTE_FRAME}) -> (
+    (f_type inside {`CAN_ERROR_FRAME,`CAN_OVERLOAD_FRAME}) -> (
       inj_crc_error   == 0 &&
       inj_stuff_error == 0 &&
       inj_form_error  == 0 &&

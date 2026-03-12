@@ -53,7 +53,8 @@ class can_driver extends uvm_driver #(can_transaction);
       `uvm_fatal("CAN_DRV", "Virtual can_if not found (key='vif')")
 
     void'(uvm_config_db#(int unsigned)::get(this, "", "max_retries", max_retries));
-    if (max_retries == 0) max_retries = 5;
+    if (max_retries == 0 && !uvm_config_db#(int unsigned)::exists(this, "", "max_retries"))
+    max_retries = 5;
 
     bit_time  = c_cfg.bit_time_ns * 1ns;
     sp_offset = (c_cfg.bit_time_ns * c_cfg.sample_point_pct * 1ns) / 100;
