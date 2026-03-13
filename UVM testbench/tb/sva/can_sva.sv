@@ -34,6 +34,9 @@ module can_top_assertions (
   input  logic        abort_tx,
   input  logic        single_shot_transmission,
   input  logic        tx_successful,
+  input  logic        self_rx_request;
+  input  logic        overrun,
+  input  logic        clear_data_overrun,
 
   // -- Status Signals -----------------------------------------
   input  logic        transmit_status,       // 1=transmitting
@@ -281,7 +284,7 @@ module can_top_assertions (
   CAN_RST_010_COUNT_ZERO_C: cover property (CAN_RST_010_COUNTERS_ZERO_ON_RST); 
   
   // ============================================================
-  //  SECTION 1 — MODES ASSERTIOND  (MOD_001 to MOD_004)
+  //  SECTION 2 — MODES ASSERTIOND  (MOD_001 to MOD_006)
   // ============================================================
   
   // ------------------------------------------------------------
@@ -344,6 +347,142 @@ module can_top_assertions (
   endproperty 
   
   CAN_MOD_003_LOM_NO_CNT_A : assert property (CAN_MOD_003_LOM_NO_CNT) 
-    else $error("[%0t] FAIL CAN_MOD_003: When LOM=%0b rx_err_cnt=%0d & tx_err_cnt=%0d must be stable .",$time,listen_only_mode,rx_err_cnt,tx_err_cnt);
+    else $error("[%0t] FAIL CAN_MOD_003: When LOM=%0b rx_err_cnt=%0d & tx_err_cnt=%0d must be stable .",$time                           ,listen_only_mode,rx_err_cnt,tx_err_cnt);
     
   CAN_MOD_003_LOM_NO_CNT_C : cover property (CAN_MOD_003_LOM_NO_CNT);
+  
+  // ------------------------------------------------------------
+  // MOD_004 :When STM=1 , test done using self_reception_request 
+  // CAN will perform successfull tx even without ACk .
+  // ------------------------------------------------------------
+  property CAN_MOD_004_STM_SELF_RX_REQ;
+    @(posedge clk_i) disable iff(rst)
+    self_test_mode && $rose(self_rx_request) |-> ##[1:6000] tx_successful;
+  endproperty 
+  
+  CAN_MOD_004_STM_SELF_RX_REQ_A: assert property (CAN_MOD_004_STM_SELF_RX_REQ)
+    else $error ("[%0t] FAIL CAN_MOD_004: When self_test_mode=%0b && self_rx_request |-> tx_successful=%0b.",                      $time,self_test_mode,self_rx_request,tx_successful);
+  
+  CAN_MOD_004_STM_SELF_RX_REQ_C : cover property (CAN_MOD_004_STM_SELF_RX_REQ);
+  
+  property CAN_MOD_004_STM_NO_ACK_TX;
+    @(posedge clk_i) disable iff(rst)
+    (self_test_mode && $rose(tx_request) && !send_ack) |-> ##[1:6000] tx_successful;
+  endproperty 
+  
+  CAN_MOD_004_STM_SELF_NO_ACK_TX_A : assert property (CAN_MOD_004_STM_NO_ACK_TX)
+  else $error("[%0t] FAIL CAN_MOD_004: STM=%0b tx_request=%0b send_ack=%0b but tx_successful=%0b",
+              $time, self_test_mode, tx_request, send_ack, tx_successful);
+  
+  CAN_MOD_004_STM_SELF_NO_ACK_TX_C : cover property (CAN_MOD_004_STM_NO_ACK_TX);
+  
+  
+  // ------------------------------------------------------------
+  // MOD_005 :When No write when Not in RESET mode 
+  // ------------------------------------------------------------
+    property CAN_MOD_005_AFM_REGS_STABLE_PROP;
+      @(posedge clk_i) disable iff (rst)
+      !reset_mode |-> ($stable(acceptance_code_0) &&
+                       $stable(acceptance_code_1)       &&
+                       $stable(acceptance_code_2)       &&
+                       $stable(acceptance_code_3)       &&
+                       $stable(acceptance_mask_0)       &&
+                       $stable(acceptance_mask_1)       &&
+                       $stable(acceptance_mask_2)       &&
+                       $stable(acceptance_mask_3));
+    endproperty
+    
+    CAN_MOD_005_AFM_REGS_STABLE_A : assert property (CAN_MOD_005_AFM_REGS_STABLE_PROP)
+      else $error("[%0t] FAIL AFM_001: acceptance filter registers changed in operating mode",
+                  $time);
+    
+    CAN_MOD_005_AFM_REGS_STABLE_C : cover property (CAN_MOD_005_AFM_REGS_STABLE_PROP);
+    
+  // ------------------------------------------------------------
+  // MOD_006 : SM=1 wake-up Interrupt  
+  // ------------------------------------------------------------
+  property CAN_MOD_006_SM_WAKE_INT;
+    @(posedge clk_i) disable iff (rst)
+    $fell(rx_i) |-> ##[1:3] $fell(irq_on);
+  endproperty
+  
+  CAN_MOD_006_SM_WAKE_INT_A : assert property (CAN_MOD_006_SM_WAKE_INT)
+    else $error("[%0t] FAIL CAN_MOD_006: rx_i=%0b but irq_on=%0b — wake-up interrupt not generated",
+                $time, rx_i, irq_on);
+  
+  CAN_MOD_006_SM_WAKE_INT_C : cover property (CAN_MOD_006_SM_WAKE_INT);
+  
+  
+  // ============================================================
+  //  SECTION 3 — CONTROL REG (CR) BasicCan ASSERTIOND  (CR_001 to CR_009)
+  // ============================================================
+  
+  // ------------------------------------------------------------
+  // CR_004: Overrun CR.4
+  // ------------------------------------------------------------
+  property CAN_CR_004_OVERRUN_INT_PROP;
+    @(posedge clk_i) disable iff (rst)
+    ($rose(overrun) && !extended_mode) |-> ##[1:3] $fell(irq_on);
+  endproperty
+  
+  CAN_CR_004_OVERRUN_INT_A : assert property (CAN_CR_004_OVERRUN_INT_PROP)
+    else $error("[%0t] FAIL CR_004: overrun=%0b but irq_on=%0b — interrupt not generated",
+                $time, overrun, irq_on);
+  
+  CAN_CR_004_OVERRUN_INT_C : cover property (CAN_CR_004_OVERRUN_INT_PROP);
+  
+  // ------------------------------------------------------------
+  // CR_005 : Error_interrupt_enable   CR.3
+  // ------------------------------------------------------------
+  property CAN_CR_005_ERR_INT_EN;
+    @(posedge clk_i) disable iff(rst)
+    ($rose(set_bus_error_irq) && !extended_mode) |-> ##[1:3] $fell(irq_on);
+  endproperty
+  
+  CAN_CR_005_ERR_INT_EN_A: assert property (CAN_CR_005_ERR_INT_EN)
+    else $error("[%0t] FAIL CR_005: error_status=%0b but irq_on=%0b — interrupt not generated",
+                $time, set_bus_error_irq, irq_on);
+                
+  CAN_CR_005_ERR_INT_EN_C: cover property (CAN_CR_005_ERR_INT_EN);
+  
+  // ------------------------------------------------------------
+  // CR_006 : Transmit_interrupt_enable   CR.2
+  // ------------------------------------------------------------
+  property CAN_CR_006_TX_INT_EN;
+    @(posedge clk_i) disable iff(rst)
+    ($fell(transmit_status) && !extended_mode) |-> ##[1:3] $fell(irq_on);
+  endproperty
+  
+  CAN_CR_006_TX_INT_EN_A: assert property (CAN_CR_006_TX_INT_EN)
+    else $error("[%0t] FAIL CR_006: transmit_status=%0b but irq_on=%0b — interrupt not generated",
+                $time, transmit_status, irq_on);
+                
+  CAN_CR_006_TX_INT_EN_C: cover property (CAN_CR_006_TX_INT_EN);
+  
+  // ------------------------------------------------------------
+  // CR_007 : Receive_interrupt_enable   CR.1
+  // ------------------------------------------------------------
+  property CAN_CR_007_RX_INT_EN;
+    @(posedge clk_i) disable iff (rst)
+    ($rose(rx_message_counter > 7'd0) && !extended_mode) |-> ##[1:3] $fell(irq_on);
+  endproperty
+  
+  CAN_CR_007_RX_INT_EN_A : assert property (CAN_CR_007_RX_INT_EN)
+    else $error("[%0t] FAIL CR_007: rx_message_counter=%0d but irq_on=%0b — interrupt not generated",
+                $time, rx_message_counter, irq_on);
+  
+  CAN_CR_007_RX_INT_EN_C : cover property (CAN_CR_007_RX_INT_EN);
+  
+  // ------------------------------------------------------------
+  // CR_007 : Receive_interrupt_enable   CR.1
+  // ------------------------------------------------------------
+  property CAN_CR_008_RST_MODE_SYNC;
+    @(posedge clk_i) disable iff (rst)
+    $rose(reset_mode) |=> $stable(reset_mode);
+  endproperty
+  
+  CAN_CR_008_RST_MODE_SYNC_A : assert property (CAN_CR_008_RST_MODE_SYNC)
+    else $error("[%0t] FAIL CR_008: reset_mode=%0b — not stable after write",
+                $time, reset_mode);
+  
+  CAN_CR_008_RST_MODE_SYNC_C : cover property (CAN_CR_008_RST_MODE_SYNC);
