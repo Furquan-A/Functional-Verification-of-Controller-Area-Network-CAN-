@@ -14,8 +14,13 @@ module can_top_assertions (
 
   // -- Mode Register Signals ----------------------------------
   input  logic        reset_mode,    // 1=reset mode active
+  input  logic        listen_only_mode,
+  input  logic        acceptance_filter_mode,
+  input  logic        self_test_mode,
+  input  logic        extended_mode,
 
   // -- BSP Error / Status Outputs ----------------------------
+  input  logic        send_ack,
   input  logic        node_bus_off,
   input  logic        error_status,          // 1=warning limit reached
   input  logic [7:0]  tx_err_cnt,
@@ -295,3 +300,50 @@ module can_top_assertions (
                 $time, reset_mode, listen_only_mode, self_test_mode, acceptance_filter_mode, extended_mode);
   
   CAN_MOD_001_RST_LOW_C : cover property (CAN_MOD_001_RST_LOW_STABLE_MOD);
+  
+  // ------------------------------------------------------------
+  // MOD_002 :When LOM=1, CAN should be error Passive and
+  // No Msg transmission 
+  // ------------------------------------------------------------
+  property CAN_MOD_002_LOM_ERR_PASSIVE;
+    @(posedge clk_i) disable iff(rst)
+    listen_only_mode |-> node_error_passive;
+  endproperty 
+  
+  CAN_MOD_002_LOM_ERR_PASSIVE_A: assert property (CAN_MOD_002_LOM_ERR_PASSIVE)
+    else $error("[%0t] FAIL MOD_002:When LOM=%0b node_error_passive=%0b.",$time,listen_only_mode,node_error_passive);
+    
+  CAN_MOD_002_LOM_ERR_PASSIVE_C : cover property (CAN_MOD_002_LOM_ERR_PASSIVE);
+  
+  property CAN_MOD_002_LOM_NO_TX;
+    @(posedge clk_i) disable iff(rst)
+    listen_only_mode |-> !transmitting;
+  endproperty
+  
+   CAN_MOD_002_LOM_NO_TX_A: assert property (CAN_MOD_002_LOM_NO_TX)
+    else $error("[%0t] FAIL MOD_002:When LOM=%0b transmitting=%0b.",$time,listen_only_mode,transmitting);
+    
+  CAN_MOD_002_LOM_NO_TX_C : cover property (CAN_MOD_002_LOM_NO_TX);
+  
+  // ------------------------------------------------------------
+  // MOD_003 :When LOM=1, CAN gives No ack & error Counters freeze 
+  // ------------------------------------------------------------
+  property CAN_MOD_003_LOM_NO_ACK;
+    @(posedge clk_i) disable iff(rst)
+    listen_only_mode |-> !send_ack;
+  endproperty 
+  
+  CAN_MOD_003_LOM_NO_ACK_A : assert property (CAN_MOD_003_LOM_NO_ACK) 
+    else $error("[%0t] FAIL CAN_MOD_003: When LOM=%0b send_ack=%0b-must be 0.",$time,listen_only_mode,send_ack);
+    
+  CAN_MOD_003_LOM_NO_ACK_C : cover property (CAN_MOD_003_LOM_NO_ACK);
+  
+  property CAN_MOD_003_LOM_NO_CNT;
+    @(posedge clk_i) disable iff(rst)
+    listen_only_mode |-> ($stable(rx_err_cnt) && $stable(tx_err_cnt));
+  endproperty 
+  
+  CAN_MOD_003_LOM_NO_CNT_A : assert property (CAN_MOD_003_LOM_NO_CNT) 
+    else $error("[%0t] FAIL CAN_MOD_003: When LOM=%0b rx_err_cnt=%0d & tx_err_cnt=%0d must be stable .",$time,listen_only_mode,rx_err_cnt,tx_err_cnt);
+    
+  CAN_MOD_003_LOM_NO_CNT_C : cover property (CAN_MOD_003_LOM_NO_CNT);
