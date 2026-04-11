@@ -10,13 +10,19 @@ package can_pkg;
   
   `include "agents/can_agent/can_transaction.sv"
   `include "agents/can_agent/can_agent_config.sv"
+  `include "coverages/can_coverage_collector.sv"
   `include "agents/can_agent/can_sequencer.sv"
   `include "agents/can_agent/can_driver.sv"
   `include "agents/can_agent/can_monitor.sv"
   `include "agents/can_agent/can_agent.sv"
   
-  
+  `include "agents/reg_agent/reg_transaction.sv"
   `include "agents/reg_agent/reg_agent_config.sv"
+  `include "agents/reg_agent/reg_sequencer.sv"
+  `include "agents/reg_agent/reg_driver.sv"
+  `include "agents/reg_agent/reg_monitor.sv"
+  `include "agents/reg_agent/reg_agent.sv"
+  
   
   
   `include "env/can_scoreboard.sv"
@@ -24,6 +30,8 @@ package can_pkg;
   `include "env/can_env.sv"
   
   // --- SEQUENCES ----
+  `include "sequences/reg_base_init_seq.sv"
+  `include "sequences/reg_random_seq.sv"
   `include "sequences/can_id_boundary_seq.sv"
   `include "sequences/can_arb_burst_seq.sv"
   `include "sequences/can_ack_error_seq.sv"
@@ -35,6 +43,8 @@ package can_pkg;
   `include "sequences/can_remote_response_seq.sv"
   `include "sequences/can_ext_data_seq.sv"
   `include "sequences/can_std_ext_arb_seq.sv"
+  `include "sequences/can_node_busy_seq.sv"
+  `include "sequences/can_random_seq.sv"
   `include "sequences/can_dlc_boundary_seq.sv"
   `include "sequences/can_dut_init_seq.sv"
   `include "sequences/can_dut_tx_seq.sv"  
@@ -44,12 +54,22 @@ package can_pkg;
   `include "sequences/can_dut_ack_err_seq.sv"
   `include "sequences/can_dut_form_err_seq.sv"
   `include "sequences/can_dut_remote_rx_seq.sv"
+  `include "sequences/can_dut_overrun_seq.sv"
+  `include "sequences/can_dut_bus_off_seq.sv"
+  `include "sequences/can_dut_abort_tx_seq.sv"
+  `include "sequences/can_dut_dual_filter_seq.sv"
+  `include "sequences/can_dut_fifo_stress_seq.sv"
+  //`include "sequences/can_dut_tx_full_payload_seq.sv"
+  `include "sequences/can_dut_int_disable_seq.sv"
   `include "sequences/can_dut_normal_mode_rx_seq.sv"
   `include "sequences/can_dut_listen_only_mode_seq.sv"
   `include "sequences/can_dut_self_test_mode_seq.sv"
   `include "sequences/can_dut_acceptance_filter_seq.sv"
+  `include "sequences/can_dut_arbitration_lost_seq.sv"
   
   // --- TESTS ----
+  `include "tests/reg_random_test.sv"
+  `include "tests/reg_init_test.sv"
   `include "tests/can_id_boundary_test.sv"
   `include "tests/can_arb_burst_test.sv"
   `include "tests/can_ack_error_test.sv"
@@ -62,6 +82,7 @@ package can_pkg;
   `include "tests/can_ext_frame_test.sv"
   `include "tests/can_std_ext_arb_test.sv"
   `include "tests/can_dlc_boundary_test.sv"
+  `include "tests/can_random_test.sv"
   `include "tests/can_dut_init_test.sv"
   `include "tests/can_dut_tx_test.sv"
   `include "tests/can_dut_rx_test.sv"
@@ -70,10 +91,18 @@ package can_pkg;
   `include "tests/can_dut_ack_err_test.sv"
   `include "tests/can_dut_form_err_test.sv"
   `include "tests/can_dut_remote_rx_test.sv"
+  `include "tests/can_dut_overrun_test.sv"
+  `include "tests/can_dut_bus_off_test.sv"
+  `include "tests/can_dut_abort_tx_test.sv"
+  `include "tests/can_dut_dual_filter_test.sv"
+  `include "tests/can_dut_fifo_stress_test.sv"
+  //`include "tests/can_dut_tx_full_payload_test.sv"
+  `include "tests/can_dut_int_disable_test.sv"
   `include "tests/can_dut_normal_mode_rx_test.sv"
   `include "tests/can_dut_listen_only_mode_test.sv"
   `include "tests/can_dut_self_test_mode_test.sv"
   `include "tests/can_dut_acceptance_filter_test.sv"
+  `include "tests/can_dut_arbitration_lost_test.sv"
   
 endpackage : can_pkg
 `endif

@@ -479,7 +479,7 @@ can_registers i_can_registers
   .self_test_mode(self_test_mode),
 
   /* Command register */
-  .clear_data_overrun(),
+  .clear_data_overrun(clear_data_overrun),
   .release_buffer(release_buffer),
   .abort_tx(abort_tx),
   .tx_request(tx_request),

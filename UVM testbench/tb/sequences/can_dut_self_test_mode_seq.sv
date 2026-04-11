@@ -169,7 +169,7 @@ class can_dut_self_test_mode_seq extends uvm_sequence #(uvm_sequence_item);
     //  bit1 AT  (Abort / Single-shot helper depending on core; in your env you used 0x03 as single-shot)
     //  bit4 SRR (Self Reception Request)  -> common in SJA1000-style cores
     // So: TR + AT + SRR = 0x13
-    vif.reg_write(CMR, 8'h11);
+    vif.reg_write(CMR, 8'h10);
 
     // 6) Wait TX attempt done
     wait_tbs_released();

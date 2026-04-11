@@ -1,9 +1,0 @@
-{"vcs1":{"timestamp_begin":1771587456.406727091, "rt":11.51, "ut":10.10, "st":0.28}}
-{"vcselab":{"timestamp_begin":1771587468.006469810, "rt":0.60, "ut":0.23, "st":0.08}}
-{"link":{"timestamp_begin":1771587468.679031574, "rt":1.13, "ut":0.19, "st":0.17}}
-{"SNPS_VCS_INTERNAL_ROOT_START_TIME": 1771587455.866490049}
-{"VCS_COMP_START_TIME": 1771587455.866490049}
-{"VCS_COMP_END_TIME": 1771587470.221127858}
-{"VCS_USER_OPTIONS": "-full64 -sverilog -timescale=1ns/1ps -ntb_opts uvm-1.2 -debug_access+all +incdir+/home/users4/fl892838/can_uvm_project/rtl +incdir+/home/users4/fl892838/can_uvm_project/tb +incdir+/home/users4/fl892838/can_uvm_project/tb/pkg +incdir+/home/users4/fl892838/can_uvm_project/tb/can_interface /home/users4/fl892838/can_uvm_project/rtl/can_bsp.v /home/users4/fl892838/can_uvm_project/rtl/can_btl.v /home/users4/fl892838/can_uvm_project/rtl/can_crc.v /home/users4/fl892838/can_uvm_project/rtl/can_fifo.v /home/users4/fl892838/can_uvm_project/rtl/can_ibo.v /home/users4/fl892838/can_uvm_project/rtl/can_acf.v /home/users4/fl892838/can_uvm_project/rtl/can_register.v /home/users4/fl892838/can_uvm_project/rtl/can_register_asyn.v /home/users4/fl892838/can_uvm_project/rtl/can_register_asyn_syn.v /home/users4/fl892838/can_uvm_project/rtl/can_register_syn.v /home/users4/fl892838/can_uvm_project/rtl/can_registers.v /home/users4/fl892838/can_uvm_project/rtl/can_top.v /home/users4/fl892838/can_uvm_project/tb/interfaces/can_if.sv /home/users4/fl892838/can_uvm_project/tb/pkg/can_pkg.sv /home/users4/fl892838/can_uvm_project/tb/top/can_top_tb.sv -o /home/users4/fl892838/can_uvm_project/sim/simv -l /home/users4/fl892838/can_uvm_project/sim/compile.log"}
-{"vcs1": {"peak_mem": 393700}}
-{"vcselab": {"peak_mem": 165860}}

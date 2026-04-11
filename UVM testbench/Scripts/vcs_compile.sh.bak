@@ -37,6 +37,7 @@ VCS_CMD=(
   "$PROJ_ROOT/rtl/can_register.v"
   "$PROJ_ROOT/rtl/can_register_asyn.v"
   "$PROJ_ROOT/rtl/can_register_asyn_syn.v"
+  "$PROJ_ROOT/rtl/can_register_syn.v"
   "$PROJ_ROOT/rtl/can_registers.v"
   "$PROJ_ROOT/rtl/can_top.v"
 

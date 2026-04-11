@@ -12,7 +12,7 @@ class can_env_config extends uvm_object;
   int unsigned no_of_reg_agent = 0;
 
   can_agent_config c_cfg[];
-  //reg_agent_config r_cfg[];
+  reg_agent_config r_cfg[];
 
   virtual can_if vif;
 
@@ -39,13 +39,13 @@ class can_env_config extends uvm_object;
     end
 
     // ---------------- REG agent configs ----------------
-   // if (has_reg_agent) begin
-    //  r_cfg = new[no_of_reg_agent];
-    //  foreach (r_cfg[i]) begin
-      //  r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg_%0d", i));
-      //  r_cfg[i].vif = vif;
-     // end
-    //end
+   if (has_reg_agent) begin
+      r_cfg = new[no_of_reg_agent];
+      foreach (r_cfg[i]) begin
+        r_cfg[i] = reg_agent_config::type_id::create($sformatf("r_cfg_%0d", i));
+        r_cfg[i].vif = vif;
+      end
+    end
   endfunction : resize
 
   // --------------------------------------------------------------------------

@@ -11,7 +11,6 @@
 ./rtl/can_register.v
 ./rtl/can_register_asyn.v
 ./rtl/can_register_asyn_syn.v
-./rtl/can_register_syn.v
 
 ./rtl/can_btl.v
 ./rtl/can_bsp.v

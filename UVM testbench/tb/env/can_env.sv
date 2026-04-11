@@ -4,9 +4,10 @@ class can_env extends uvm_env;
 
   // AGENTS
   can_agent  c_agent[];
- // reg_agent  r_agent[];
+  reg_agent  r_agent[];
 
   can_scoreboard  c_sb;
+  can_coverage_collector cov_collector[];
   // can_virtual_sequencer can_vseqrh; // enable later when you’re ready
   can_env_config  m_cfg;
 
@@ -27,9 +28,11 @@ class can_env extends uvm_env;
    
     if (m_cfg.has_can_agent) begin
       c_agent = new[m_cfg.no_of_can_agent];
+      cov_collector = new[m_cfg.no_of_can_agent];
     
       foreach (c_agent[i]) begin
         c_agent[i] = can_agent::type_id::create($sformatf("c_agent%0d", i), this);
+        cov_collector[i] = can_coverage_collector::type_id::create($sformatf("cov_collector%0d", i), this);
     
         // Set per-agent config into that agent scope
         uvm_config_db#(can_agent_config)::set(this,
@@ -45,20 +48,22 @@ class can_env extends uvm_env;
 
 
     // ---------------- REG agents ----------------
-    //if (m_cfg.has_reg_agent) begin
-     // r_agent = new[m_cfg.no_of_reg_agent];
+   if (m_cfg.has_reg_agent) begin
+  r_agent = new[m_cfg.no_of_reg_agent];
 
-      //foreach (r_agent[i]) begin
-       // r_agent[i] = reg_agent::type_id::create($sformatf("r_agent%0d", i), this);
+  foreach (r_agent[i]) begin
+    // SET FIRST — config must be in db before agent's build_phase runs
+    uvm_config_db#(reg_agent_config)::set(
+      this,
+      $sformatf("r_agent%0d", i),    // ← no .* wildcard
+      "m_cfg",
+      m_cfg.r_cfg[i]
+    );
 
-        //uvm_config_db#(reg_agent_config)::set(
-        //  this,
-        //  $sformatf("r_agent%0d.*", i),
-         // "m_cfg",
-         // m_cfg.r_cfg[i]
-       // );
-     // end
-  //  end
+    // THEN CREATE
+    r_agent[i] = reg_agent::type_id::create($sformatf("r_agent%0d", i), this);
+  end
+end
     // ---------------- Scoreboard ----------------
     if (m_cfg.has_can_scoreboard) begin
       c_sb = can_scoreboard::type_id::create("c_sb", this);
@@ -88,6 +93,9 @@ class can_env extends uvm_env;
     //   foreach (r_agent[i]) can_vseqrh.reg_sqrs[i] = r_agent[i].seqrh;
     //   foreach (c_agent[i]) can_vseqrh.can_sqrs[i] = c_agent[i].seqrh;
      end
+    foreach (c_agent[i])
+    c_agent[i].mon_ap.connect(cov_collector[i].analysis_export);
+    
   endfunction : connect_phase
 
 endclass

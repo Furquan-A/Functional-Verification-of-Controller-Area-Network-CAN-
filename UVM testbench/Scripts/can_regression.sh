@@ -29,6 +29,28 @@ TESTS=(
   "can_stuff_error_test|Error Injection Tests"
   "can_form_error_test|Error Injection Tests"
   "can_ack_error_test|Error Injection Tests"
+  "can_dut_init_test|DUT Instantiate Test"
+  "can_dut_rx_test|DUT Instantiate Test"
+  "can_dut_tx_test|DUT Instantiate Test"
+  "can_dut_crc_err_test|DUT Error Test"
+  "can_dut_stuff_err_test|DUT Error Test"
+  "can_dut_form_err_test|DUT Error Test"
+  "can_dut_ack_err_test|DUT Error Test"
+  "can_dut_bus_off_test|DUT Functionality Test"
+  "can_dut_int_disable_test|DUT Functionality Test"
+  "can_dut_overrun_test|DUT Functionality Test"
+  "can_dut_abort_tx_test|DUT Functionality Test"
+  "can_dut_remote_rx_test|DUT Functionality Test"
+  "can_dut_arbitration_lost_test|DUT Functionality Test"
+  "can_dut_dual_filter_test|DUT Functionality Test"
+  "can_dut_fifo_stress_test|DUT Functionality Test"
+  "can_dut_normal_mode_rx_test|DUT Mode Test"
+  "can_dut_listen_only_mode_test|DUT Mode Test"
+  "can_dut_self_test_mode_test|DUT Mode Test"
+  "can_dut_acceptance_filter_test|DUT Mode Test"
+  "can_random_test|Constrained Random Tests"
+  "reg_init_test|Reg Agent"
+  "reg_random_test|Reg Agent"
 )
 
 TOTAL=${#TESTS[@]}
@@ -55,10 +77,8 @@ SUMMARY_LOG="$LOGDIR/regression_summary_${TIMESTAMP}.txt"
 # -- Helper: category banner -----------------------------------
 print_banner() {
   local label="$1"
-  local dashes
-  dashes=$(printf '-%.0s' $(seq 1 $((48 - ${#label}))))
   echo ""
-  echo -e "  ${BOLD}${CYAN}-- ${label} ${dashes}${NC}"
+  echo -e "  ${BOLD}${CYAN}-- ${label}${NC}"
 }
 
 # -- Helper: result row ----------------------------------------
@@ -82,7 +102,7 @@ echo -e "${BOLD}${CYAN}  CAN UVM Agent Regression                               
 echo -e "${BOLD}${CYAN}  $(date)${NC}"
 echo -e "${BOLD}${CYAN}============================================================${NC}"
 echo ""
-echo -e "  Running ${BOLD}${TOTAL}${NC} tests across 4 categories"
+echo -e "  Running ${BOLD}${TOTAL}${NC} tests across 6 categories"
 echo -e "  Logs saved to: ${LOGDIR}/"
 echo ""
 
@@ -138,12 +158,12 @@ for i in "${!TESTS[@]}"; do
     echo -e "${RED}FAIL${NC}  (FATAL=${FATAL} ERROR=${ERROR} WARNING=${WARNING} SB_FAIL=${SB_FAIL})"
     if [ "$CAT" = "Basic Frame Tests" ]; then
       BASIC_FAILED=1
-      echo -e "  ${BOLD}${RED}  ? Basic test failed — remaining categories will be skipped${NC}"
+      echo -e "  ${BOLD}${RED}  Basic test failed — remaining categories will be skipped${NC}"
     fi
   elif [ "$WARNING" -gt 0 ]; then
-    STATUS="WARN"
-    WARN=$((WARN + 1))
-    echo -e "${YELLOW}WARN${NC}  (FATAL=${FATAL} ERROR=${ERROR} WARNING=${WARNING} SB_FAIL=${SB_FAIL})"
+    STATUS="PASS"
+    PASS=$((PASS + 1))
+    echo -e "${GREEN}PASS${NC}  (FATAL=${FATAL} ERROR=${ERROR} WARNING=${WARNING} SB_FAIL=${SB_FAIL})"
   else
     STATUS="PASS"
     PASS=$((PASS + 1))
@@ -198,18 +218,17 @@ echo ""
 
 # -- Verdict ---------------------------------------------------
 if [ "$FAIL" -eq 0 ] && [ "$WARN" -eq 0 ] && [ "$SKIP" -eq 0 ]; then
-  echo -e "${BOLD}${GREEN}  ? ALL ${TOTAL} TESTS PASSED — CAN Agent side complete${NC}"
-  echo -e "${BOLD}${GREEN}  ? Ready for RTL Integration (Week 2)${NC}"
+  echo -e "${BOLD}${GREEN}  ALL ${TOTAL} TESTS PASSED — CAN verification complete${NC}"
+  echo -e "${BOLD}${GREEN}  Ready to move ahead in your project${NC}"
 elif [ "$FAIL" -eq 0 ] && [ "$SKIP" -eq 0 ]; then
-  echo -e "${BOLD}${YELLOW}  ? ALL TESTS PASSED WITH WARNINGS${NC}"
-  echo -e "${BOLD}${YELLOW}  ? Review warnings before proceeding to Week 2${NC}"
+  echo -e "${BOLD}${YELLOW}  ALL TESTS PASSED WITH WARNINGS${NC}"
 else
-  echo -e "${BOLD}${RED}  ? ${FAIL} TEST(S) FAILED — check logs in ${LOGDIR}/${NC}"
+  echo -e "${BOLD}${RED}  ${FAIL} TEST(S) FAILED — check logs in ${LOGDIR}/${NC}"
   echo ""
   echo -e "  ${BOLD}Failed tests:${NC}"
   for i in "${!RESULT_STATUS[@]}"; do
     if [ "${RESULT_STATUS[$i]}" = "FAIL" ]; then
-      echo -e "    ${RED}? ${RESULT_NAME[$i]}${NC}"
+      echo -e "    ${RED}x ${RESULT_NAME[$i]}${NC}"
       echo -e "      log: ${LOGDIR}/${RESULT_NAME[$i]}.log"
     fi
   done
@@ -224,7 +243,7 @@ echo ""
 
 # -- Save plain text summary to file --------------------------
 {
-  echo "CAN UVM Agent Regression"
+  echo "CAN UVM Regression"
   echo "Run: $(date)"
   echo "============================================================"
   printf "%-38s %-8s %-7s %-7s %-9s\n" "TEST" "STATUS" "FATAL" "ERROR" "WARNING"

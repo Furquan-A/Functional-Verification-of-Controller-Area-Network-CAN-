@@ -1,77 +1,82 @@
 `ifndef REG_AGENT_SV
 `define REG_AGENT_SV
 
-//`include "uvm_macros_svh"
+`include "uvm_macros.svh"
 import uvm_pkg::*;
 
 class reg_agent extends uvm_agent;
-	
-	virtual can_if vif;
+  `uvm_component_utils(reg_agent)
 
-	//----Agent components and their Handles--
-	reg_driver        rdrvh;
-	reg_monitor       rmonh;
-	reg_sequencer     rseqrh;
-	reg_agent_config  m_cfg;
+  // Cached virtual interface (also lives in m_cfg.vif)
+  virtual can_if   vif;
 
-	uvm_analysis_port #(reg_transaction) ap;
+  // ---- Agent components ----
+  reg_driver       rdrvh;
+  reg_monitor      rmonh;
+  reg_sequencer    rseqrh;
+  reg_agent_config m_cfg;
 
+  // Agent-level analysis port (re-exposes monitor's ap)
+  uvm_analysis_port #(reg_transaction) ap;
 
-	// ========== UVM Factory Registration ==========
-	`uvm_component_utils_begin(reg_agent)
-	`uvm_field_object(m_cfg, UVM_DEFAULT)
-	`uvm_component_utils_end
-  
-// ================================== new =================================================
- 
-function new (string name = "reg_agent", uvm_component parent);
-	super.new(name,parent);
-	ap = new("ap",this);
-endfunction 
+  function new(string name = "reg_agent", uvm_component parent = null);
+    super.new(name, parent);
+    ap = new("ap", this);
+  endfunction
 
-// ================================ build_phase =============================================
+  // ============================ build_phase ============================
+  function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
 
-function void build_phase(uvm_phase phase);
-	super.build_phase(phase);
+    // Get config from db
+    if (!uvm_config_db#(reg_agent_config)::get(this, "", "m_cfg", m_cfg))
+      `uvm_fatal("REG_AGENT",
+        "Cannot get reg_agent_config from config_db (key='m_cfg'). Did you set it?")
 
-	// get config from the config_db
-	if(!uvm_config_db#(reg_agent_config) :: get(this,"","m_cfg",m_cfg)) begin 
-		`uvm_info("REG_AGENT","No reg_agent_config found, creating default", UVM_LOW)
-		m_cfg = reg_agent_config::type_id::create("m_cfg");
-	end 
+    // Validate
+    begin
+      string why;
+      if (!m_cfg.validate(why))
+        `uvm_fatal("REG_AGENT_CFG", why)
+    end
 
-	// Now set the configuration for the sub components
-	uvm_config_db #(reg_agent_config) ::set(this,"*","m_cfg",m_cfg);
+    // Cache vif for convenience
+    vif = m_cfg.vif;
 
-	// create monitor which is always present in both ACTIVE and PASSIVE
-	rmonh = reg_monitor::type_id::create("rmonh",this);
+    // Propagate config (and vif) down to children
+    uvm_config_db#(reg_agent_config)::set(this, "*", "m_cfg", m_cfg);
+    uvm_config_db#(virtual can_if)::set(this, "*", "vif", vif);
 
-	// check the m_cfg and then create the driver and sequencer 
-	if(m_cfg.is_active == UVM_ACTIVE) begin 
-		rdrvh = reg_driver::type_id::create("rdrvh",this);
-		rseqrh = reg_sequencer::type_id::create("rseqrh",this);
-	end 
+    // Monitor is always created (active or passive)
+    rmonh = reg_monitor::type_id::create("rmonh", this);
 
-	`uvm_info("REG_AGENT",$sformatf("Built reg_agent in %s mode with %s bus",m_cfg.is_active.name(),m_cfg.expect_bus.name()),UVM_MEDIUM)
+    // Driver + sequencer only if active
+    if (m_cfg.is_active == UVM_ACTIVE) begin
+      rdrvh  = reg_driver::type_id::create("rdrvh", this);
+      rseqrh = reg_sequencer::type_id::create("rseqrh", this);
+    end
 
-endfunction : build_phase 
+    `uvm_info("REG_AGENT",
+      $sformatf("Built reg_agent in %s mode on %s bus",
+                (m_cfg.is_active == UVM_ACTIVE) ? "ACTIVE" : "PASSIVE",
+                m_cfg.bus_name()),
+      UVM_MEDIUM)
+  endfunction : build_phase
 
-// ============================== connect_phase ==============================================
+  // ============================ connect_phase ==========================
+  function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
 
-function void connect_phase(uvm_phase phase);
-	super.connect_phase(phase);
+    // Re-expose monitor analysis port at agent level
+    rmonh.ap.connect(ap);
 
-	// connect analysis port to monitor 
-	rmonh.ap.connect(ap);
+    // Connect driver to sequencer if active
+    if (m_cfg.is_active == UVM_ACTIVE) begin
+      rdrvh.seq_item_port.connect(rseqrh.seq_item_export);
+    end
 
-	// connect driver to the sequencer if active 
-	if(m_cfg.is_active == UVM_ACTIVE) begin 
-	rdrvh.seq_item_port.connect(rseqrh.seq_item_export);
-	end 
-	
-	`uvm_info("REG_AGENT","connected reg_agent components",UVM_HIGH)
-
-endfunction : connect_phase
+    `uvm_info("REG_AGENT", "Connected reg_agent components", UVM_HIGH)
+  endfunction : connect_phase
 
 endclass : reg_agent
 

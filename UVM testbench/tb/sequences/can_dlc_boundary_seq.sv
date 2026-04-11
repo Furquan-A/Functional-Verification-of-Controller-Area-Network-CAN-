@@ -11,32 +11,40 @@ class can_dlc_boundary_seq extends uvm_sequence #(can_transaction);
   task body();
     can_transaction tr;
 
-    // -- Frame 1: DLC=0 (zero-byte DATA frame) ----------------
-    tr = can_transaction::type_id::create("tr_dlc0");
-    start_item(tr);
-      tr.can_fmt         = `CAN_ID_STD;
-      tr.f_type          = `CAN_DATA_FRAME;
-      tr.id              = 11'h111;
-      tr.dlc             = 0;
-      tr.data            = new[0];   // empty — no data field
-      tr.inj_crc_error   = 0;
-      tr.inj_form_error  = 0;
-      tr.inj_stuff_error = 0;
-      tr.inj_ack_error   = 0;
-      tr.force_midframe  = 0;
-    finish_item(tr);
+    // Send frames with all DLC values 0-8 to achieve full DLC coverage
+    for (int dlc_val = 0; dlc_val <= 8; dlc_val++) begin
 
-    if(!tr.ack_seen)
-      `uvm_error("DLC_BOUNDARY","DLC=0 frame not ACKed")
-    else
-      `uvm_info("DLC_BOUNDARY","PASS: DLC=0 frame ACKed correctly", UVM_LOW)
+      tr = can_transaction::type_id::create($sformatf("tr_dlc%0d", dlc_val));
+      start_item(tr);
+        tr.can_fmt         = `CAN_ID_STD;
+        tr.f_type          = `CAN_DATA_FRAME;
+        tr.id              = 11'h100 + dlc_val;
+        tr.dlc             = dlc_val;
+        tr.data            = new[dlc_val];
+        // Fill data bytes with recognizable pattern
+        foreach (tr.data[i]) tr.data[i] = byte'(dlc_val * 16 + i);
+        tr.inj_crc_error   = 0;
+        tr.inj_form_error  = 0;
+        tr.inj_stuff_error = 0;
+        tr.inj_ack_error   = 0;
+        tr.force_midframe  = 0;
+      finish_item(tr);
 
-    // -- Frame 2: DLC=8 (maximum payload) ---------------------
-    tr = can_transaction::type_id::create("tr_dlc8");
+      if (!tr.ack_seen)
+        `uvm_error("DLC_BOUNDARY",
+          $sformatf("DLC=%0d frame not ACKed", dlc_val))
+      else
+        `uvm_info("DLC_BOUNDARY",
+          $sformatf("PASS: DLC=%0d frame ACKed correctly", dlc_val),
+          UVM_LOW)
+    end
+
+    // Also send DLC=8 extended frame for format x DLC cross coverage
+    tr = can_transaction::type_id::create("tr_dlc8_ext");
     start_item(tr);
-      tr.can_fmt         = `CAN_ID_STD;
+      tr.can_fmt         = `CAN_ID_EXT;
       tr.f_type          = `CAN_DATA_FRAME;
-      tr.id              = 11'h222;
+      tr.id              = 29'h1ABCDE1;
       tr.dlc             = 8;
       tr.data            = new[8];
       tr.data[0]         = 8'hDE;
@@ -54,13 +62,12 @@ class can_dlc_boundary_seq extends uvm_sequence #(can_transaction);
       tr.force_midframe  = 0;
     finish_item(tr);
 
-    if(!tr.ack_seen)
-      `uvm_error("DLC_BOUNDARY","DLC=8 frame not ACKed")
+    if (!tr.ack_seen)
+      `uvm_error("DLC_BOUNDARY", "DLC=8 EXT frame not ACKed")
     else
-      `uvm_info("DLC_BOUNDARY","PASS: DLC=8 frame ACKed correctly", UVM_LOW)
+      `uvm_info("DLC_BOUNDARY", "PASS: DLC=8 EXT frame ACKed correctly", UVM_LOW)
 
-    `uvm_info("DLC_BOUNDARY","Both DLC boundary frames complete", UVM_LOW)
-
+    `uvm_info("DLC_BOUNDARY", "All DLC boundary frames complete (DLC 0-8 STD + DLC8 EXT)", UVM_LOW)
   endtask
 
 endclass

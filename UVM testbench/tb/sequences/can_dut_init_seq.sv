@@ -86,8 +86,8 @@ class can_dut_init_seq extends uvm_sequence #(uvm_sequence_item);
     //   IER[2] = EI  (Error Warning Interrupt)
     //   IER[3] = DOI (Data Overrun Interrupt)
     //   IER[7] = BEI (Bus Error Interrupt)
-    vif.wb_write(IER, 8'h8F);
-    `uvm_info("DUT_INIT","Step 5: Interrupts enabled (IER=0x8F)", UVM_LOW)
+    vif.wb_write(IER, 8'hEF);  // added EPIE(bit5) + ALIE(bit6): 0x8F | 0x20 | 0x40 = 0xEF
+      `uvm_info("DUT_INIT","Step 5: Interrupts enabled (IER=0xEF)", UVM_LOW)
 
     // ── Step 6: Clear pending interrupts ──────────────────────
     vif.wb_read(IR, rdata);
